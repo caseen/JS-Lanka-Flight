@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { 
   TrendingUp, 
@@ -14,7 +13,7 @@ import {
   Zap
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { DashboardStats, Ticket } from '../types';
+import { DashboardStats, Ticket } from '../types.ts';
 
 interface DashboardProps {
   stats: DashboardStats;

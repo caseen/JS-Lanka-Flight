@@ -17,9 +17,22 @@
       window.process = {
         env: {
           NODE_ENV: 'production',
-          // Netlify environment variables are usually injected at build time.
-          // For a pure client-side Babel app, ensure the API_KEY is handled or shimmed.
-          API_KEY: undefined 
+          // Note: On Netlify, use Snippet Injection to set window.process.env.API_KEY = "{{env.API_KEY}}"
+          API_KEY: window.process?.env?.API_KEY || ''
+        }
+      };
+
+      // Error reporting for easier debugging of blank pages
+      window.onerror = function(message, source, lineno, colno, error) {
+        const root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = `
+            <div style="padding: 20px; color: #e11d48; font-family: monospace; background: #fff1f2; border: 1px solid #fda4af; margin: 20px; border-radius: 8px;">
+              <h1 style="font-size: 18px; margin-bottom: 10px;">Application Error</h1>
+              <p style="font-size: 14px;">${message}</p>
+              <pre style="font-size: 12px; margin-top: 10px; opacity: 0.7;">${source}:${lineno}</pre>
+            </div>
+          `;
         }
       };
     </script>
@@ -29,42 +42,39 @@
         font-family: 'Inter', sans-serif;
         background-color: #f8fafc;
       }
-      /* Ensure the app is visible even during slow script loading */
       #root:empty::after {
-        content: 'Loading Flight Management System...';
+        content: 'Initializing JS Lanka Systems...';
         display: flex;
         align-items: center;
         justify-content: center;
         height: 100vh;
         color: #64748b;
         font-weight: 500;
+        letter-spacing: 0.05em;
       }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
-    "recharts": "https://esm.sh/recharts@^3.7.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.48.1"
+    "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0",
+    "recharts": "https://esm.sh/recharts@2.13.3",
+    "@google/genai": "https://esm.sh/@google/genai@0.21.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.46.1"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
-    <!-- 
-      Using type="text/babel" + data-type="module" + data-presets 
-      is required for Babel Standalone to handle TSX files correctly in the browser.
-    -->
     <script 
       type="text/babel" 
       data-type="module" 
-      data-presets="react,typescript" 
-      src="index.tsx"
+      data-presets="env,react,typescript" 
+      src="./index.tsx"
     ></script>
   </body>
 </html>
