@@ -17,22 +17,20 @@
       window.process = {
         env: {
           NODE_ENV: 'production',
-          API_KEY: '' // Will be populated by Netlify Snippet Injection if configured
+          // Note: On Netlify, use Snippet Injection to set window.process.env.API_KEY = "{{env.API_KEY}}"
+          API_KEY: window.process?.env?.API_KEY || ''
         }
       };
 
-      // Help debug blank pages by showing errors on screen
+      // Error reporting for easier debugging of blank pages
       window.onerror = function(message, source, lineno, colno, error) {
         const root = document.getElementById('root');
         if (root) {
           root.innerHTML = `
-            <div style="padding: 40px; color: #ef4444; font-family: system-ui, sans-serif; background: #fef2f2; border: 2px solid #fee2e2; margin: 20px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
-              <h1 style="font-size: 24px; margin-bottom: 12px; font-weight: 800; text-transform: uppercase;">System Error</h1>
-              <p style="font-size: 16px; margin-bottom: 20px; color: #7f1d1d;">${message}</p>
-              <div style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #fee2e2; font-family: monospace; font-size: 13px; overflow-x: auto;">
-                ${source}:${lineno}:${colno}
-              </div>
-              <button onclick="location.reload()" style="margin-top: 20px; background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">Reload System</button>
+            <div style="padding: 20px; color: #e11d48; font-family: monospace; background: #fff1f2; border: 1px solid #fda4af; margin: 20px; border-radius: 8px;">
+              <h1 style="font-size: 18px; margin-bottom: 10px;">Application Error</h1>
+              <p style="font-size: 14px;">${message}</p>
+              <pre style="font-size: 12px; margin-top: 10px; opacity: 0.7;">${source}:${lineno}</pre>
             </div>
           `;
         }

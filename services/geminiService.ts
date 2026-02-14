@@ -1,7 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Initialize the Gemini API client using the API key from environment variables.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Ensure process.env.API_KEY is defined via the shim in index.html or Netlify build
+const apiKey = process.env.API_KEY;
+
+const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 
 const ticketSchema = {
   type: Type.OBJECT,
@@ -57,8 +59,11 @@ const ticketSchema = {
 };
 
 export const extractTicketDetails = async (base64Data: string, mimeType: string) => {
+  if (!apiKey) {
+    throw new Error("Gemini API Key is not configured in environment variables.");
+  }
+  
   try {
-    // Generate content using gemini-3-flash-preview for text extraction tasks.
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: {
@@ -74,7 +79,6 @@ export const extractTicketDetails = async (base64Data: string, mimeType: string)
       }
     });
 
-    // Access the generated text directly from the response object.
     const text = response.text;
     if (!text) throw new Error("No data extracted from the ticket.");
     return JSON.parse(text);
