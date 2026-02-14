@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
@@ -21,7 +22,7 @@ import {
   X,
   ListOrdered
 } from 'lucide-react';
-import { Ticket } from '../types.ts';
+import { Ticket } from '../types';
 
 interface TicketListProps {
   tickets: Ticket[];

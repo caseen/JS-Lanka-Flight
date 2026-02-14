@@ -1,9 +1,8 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Ensure process.env.API_KEY is defined via the shim in index.html or Netlify build
-const apiKey = process.env.API_KEY;
-
-const ai = new GoogleGenAI({ apiKey: apiKey || '' });
+// Always use process.env.API_KEY directly as a named parameter
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const ticketSchema = {
   type: Type.OBJECT,
@@ -59,10 +58,6 @@ const ticketSchema = {
 };
 
 export const extractTicketDetails = async (base64Data: string, mimeType: string) => {
-  if (!apiKey) {
-    throw new Error("Gemini API Key is not configured in environment variables.");
-  }
-  
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",

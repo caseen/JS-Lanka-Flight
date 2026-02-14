@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Menu, X, Plane, LogOut } from 'lucide-react';
-import { AppView } from '../types.ts';
-import { NAV_ITEMS } from '../constants.tsx';
+import { AppView } from '../types';
+import { NAV_ITEMS } from '../constants';
 import { User } from '@supabase/supabase-js';
 
 interface LayoutProps {
