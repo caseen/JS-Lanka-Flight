@@ -1,0 +1,7 @@
+{
+  "name": "JS Lanka Travels Flight Ticket Management",
+  "description": "A professional flight ticket management system with AI-powered ticket extraction, automated profit calculation, and comprehensive customer/supplier management.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
