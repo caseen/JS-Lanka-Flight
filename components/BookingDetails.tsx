@@ -1,19 +1,24 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   ArrowLeft, 
   Plane, 
   Calendar, 
   User, 
-  CreditCard, 
-  Briefcase, 
-  TrendingUp, 
-  TrendingDown, 
   Edit,
   ArrowRight,
+  Download,
+  Info,
+  Briefcase,
   PlaneTakeoff,
   PlaneLanding,
-  Download
+  Clock,
+  MapPin,
+  Eye,
+  EyeOff,
+  Calculator,
+  TrendingUp,
+  DollarSign
 } from 'lucide-react';
 import { Ticket } from '../types';
 
@@ -24,12 +29,18 @@ interface BookingDetailsProps {
 }
 
 const BookingDetails: React.FC<BookingDetailsProps> = ({ ticket, onBack, onEdit }) => {
+  const [isAdminVisible, setIsAdminVisible] = useState(true);
+  const [isFinancialVisible, setIsFinancialVisible] = useState(false);
+
   const handlePrint = () => {
     window.print();
   };
 
+  const segmentCount = ticket.segments.length;
+  const isHighDensity = segmentCount > 2;
+
   return (
-    <div className="max-w-4xl mx-auto animate-fadeIn pb-12">
+    <div className="h-[calc(100vh-80px)] lg:h-[calc(100vh-100px)] flex flex-col animate-fadeIn overflow-hidden">
       <style>{`
         @media print {
           body * {
@@ -43,6 +54,8 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ ticket, onBack, onEdit 
             left: 0;
             top: 0;
             width: 100%;
+            height: auto;
+            background: white !important;
           }
           .no-print {
             display: none !important;
@@ -50,215 +63,303 @@ const BookingDetails: React.FC<BookingDetailsProps> = ({ ticket, onBack, onEdit 
           .print-only {
             display: block !important;
           }
-          .bg-slate-900 {
-            background-color: #0f172a !important;
-            color: white !important;
-            -webkit-print-color-adjust: exact;
-          }
-          .bg-slate-50 {
-            background-color: #f8fafc !important;
-            -webkit-print-color-adjust: exact;
-          }
-          .border {
-            border: 1px solid #e2e8f0 !important;
-          }
-          .rounded-3xl {
-            border-radius: 1.5rem !important;
-          }
+        }
+        .airport-glow {
+          text-shadow: 0 0 15px rgba(59, 130, 246, 0.08);
         }
       `}</style>
 
-      {/* Navigation & Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 no-print">
+      {/* Top Navigation Bar */}
+      <div className="flex justify-between items-center mb-2 no-print shrink-0 px-1 lg:px-2">
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors font-bold text-sm"
+          className="group flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-all font-bold text-xs lg:text-sm"
         >
-          <ArrowLeft size={20} /> Back to All Tickets
+          <div className="p-1 lg:p-1.5 bg-white rounded-lg shadow-sm border border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-all">
+            <ArrowLeft size={14} />
+          </div>
+          Back
         </button>
-        <div className="flex gap-3">
+        <div className="flex gap-1.5 lg:gap-2">
           <button 
             onClick={handlePrint}
-            className="flex items-center gap-2 px-6 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+            className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 bg-white text-slate-700 rounded-lg font-black text-[10px] lg:text-[11px] uppercase tracking-widest hover:bg-slate-50 border border-slate-200 shadow-sm transition-all active:scale-95"
           >
-            <Download size={18} /> Download PDF
+            <Download size={12} className="text-blue-600" /> Export
           </button>
           <button 
             onClick={() => onEdit(ticket)}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all"
+            className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 bg-blue-600 text-white rounded-lg font-black text-[10px] lg:text-[11px] uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95"
           >
-            <Edit size={18} /> Edit Booking
+            <Edit size={12} /> Edit
           </button>
         </div>
       </div>
 
-      <div id="printable-booking" className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* Top Header Card */}
-        <div className="bg-slate-900 p-8 text-white">
-          <div className="flex flex-col md:flex-row justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md">
-                <Plane className="text-orange-400" size={40} />
+      {/* Main Container */}
+      <div id="printable-booking" className="flex-1 flex flex-col bg-white rounded-2xl lg:rounded-3xl shadow-xl border border-slate-100 overflow-hidden min-h-0">
+        
+        {/* Brand Header */}
+        <div className="bg-slate-900 px-4 lg:px-6 py-3 lg:py-4 text-white relative overflow-hidden shrink-0">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+          <div className="relative z-10 flex flex-row justify-between items-center">
+            <div className="flex items-center gap-3 lg:gap-4">
+              <div className="p-1.5 lg:p-2 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg shadow-lg">
+                <Plane className="text-white" size={20} lg:size={24} strokeWidth={2.5} />
               </div>
               <div>
-                <h1 className="text-3xl font-black">{ticket.airline}</h1>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs font-black text-blue-300 uppercase tracking-widest bg-blue-500/20 px-2 py-1 rounded">PNR: {ticket.pnr}</span>
-                  <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
-                    ticket.status === 'Confirmed' ? 'bg-emerald-500/20 text-emerald-400' :
-                    ticket.status === 'Cancelled' ? 'bg-rose-500/20 text-rose-400' :
-                    'bg-amber-500/20 text-amber-400'
+                <h1 className="text-base lg:text-xl font-black tracking-tight leading-none uppercase truncate max-w-[120px] lg:max-w-none">{ticket.airline}</h1>
+                <div className="flex items-center gap-1.5 lg:gap-2 mt-1.5">
+                  <span className="bg-white/10 px-1.5 py-0.5 rounded text-[9px] lg:text-[10px] font-black uppercase tracking-wider text-blue-200 border border-white/10">
+                    PNR: {ticket.pnr}
+                  </span>
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] lg:text-[10px] font-black uppercase tracking-wider border ${
+                    ticket.status === 'Confirmed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                    ticket.status === 'Cancelled' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
+                    'bg-amber-500/10 text-amber-400 border-amber-500/20'
                   }`}>
                     {ticket.status}
                   </span>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col md:items-end justify-center">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Issued Date</p>
-              <p className="text-xl font-black">{ticket.issuedDate}</p>
+            
+            <div className="text-right flex flex-col items-end">
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Issued</p>
+              <p className="text-xs lg:text-sm font-black">{ticket.issuedDate}</p>
               {ticket.isDummy && (
-                <span className="bg-orange-500 text-[10px] font-black uppercase px-2 py-1 rounded mt-2 tracking-widest">DUMMY BOOKING</span>
+                <div className="mt-1 px-1 py-0.5 bg-orange-500 text-white text-[8px] font-black uppercase tracking-widest rounded no-print">
+                  DUMMY
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="p-8 space-y-10">
-          {/* Itinerary Section */}
-          <section>
-            <div className="flex items-center gap-2 mb-6 text-sm font-black text-blue-600 uppercase tracking-widest">
-              <Calendar size={18} /> Full Itinerary
-            </div>
-            <div className="space-y-4">
-              {ticket.segments.map((seg, idx) => (
-                <div key={idx} className="relative bg-slate-50 p-6 rounded-3xl border border-slate-100 group hover:border-blue-200 transition-all">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="flex-1 flex items-center gap-4 md:gap-8">
-                      <div className="text-center">
-                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Departure</p>
-                        <h3 className="text-2xl font-black text-slate-800">{seg.origin}</h3>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+          
+          {/* Left Panel: Flight Journey */}
+          <div className="flex-[1.5] flex flex-col border-b lg:border-b-0 lg:border-r border-slate-100 min-h-0 bg-white">
+             <div className="px-4 lg:px-6 py-2 lg:py-3 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <PlaneTakeoff size={14} className="text-blue-500" />
+                  <h3 className="text-[11px] lg:text-xs font-black text-slate-800 uppercase tracking-widest">Flight Journey</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                   <span className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase bg-white px-1.5 py-0.5 rounded border border-slate-100">
+                     {segmentCount} Leg{segmentCount > 1 ? 's' : ''}
+                   </span>
+                </div>
+             </div>
+             
+             <div className="flex-1 flex flex-col p-2 lg:p-4 justify-around min-h-0 overflow-hidden bg-slate-50/5">
+                {ticket.segments.map((seg, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col justify-center max-h-[160px] relative min-h-0">
+                    <div className={`group relative flex flex-row items-center gap-2 lg:gap-6 p-2 lg:p-5 rounded-xl lg:rounded-2xl bg-white border border-slate-100 hover:border-blue-200 transition-all shadow-sm ${isHighDensity ? 'py-2 lg:py-3' : 'py-3 lg:py-6'}`}>
+                       
+                       {/* Left: Origin */}
+                       <div className="flex-1 text-left min-w-0">
+                          <h4 className={`font-black text-slate-900 airport-glow truncate ${isHighDensity ? 'text-xl lg:text-2xl' : 'text-2xl lg:text-4xl'}`}>
+                            {seg.origin}
+                          </h4>
+                          <p className="text-[8px] lg:text-[9px] font-black text-blue-500 uppercase tracking-widest leading-none mt-1">DEP</p>
+                          <div className="mt-2 space-y-0.5">
+                             <div className="flex items-center gap-1.5">
+                                <Clock size={10} className="text-slate-400" />
+                                <p className="text-xs lg:text-sm font-black text-slate-800 leading-none">{seg.departureTime}</p>
+                             </div>
+                             <p className="text-[10px] font-bold text-slate-400 leading-none">{seg.departureDate}</p>
+                          </div>
+                       </div>
+
+                       {/* Center: Flight Connection */}
+                       <div className="flex-1 flex flex-col items-center justify-center py-0 shrink-0">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[8px] lg:text-[9px] font-black tracking-widest border border-blue-100 uppercase mb-1.5">
+                            {seg.flightNo}
+                          </span>
+                          
+                          <div className="w-full h-[1px] bg-slate-100 relative rounded-full">
+                             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-0.5 lg:p-1.5 bg-white border border-slate-50 rounded-full z-10">
+                                <Plane size={14} className="text-blue-400 transform rotate-45" />
+                             </div>
+                          </div>
+                          
+                          <span className="text-[8px] lg:text-[9px] font-black text-slate-300 uppercase tracking-widest mt-2 text-center">Direct Flight</span>
+                       </div>
+
+                       {/* Right: Destination */}
+                       <div className="flex-1 text-right min-w-0">
+                          <h4 className={`font-black text-slate-900 airport-glow truncate ${isHighDensity ? 'text-xl lg:text-2xl' : 'text-2xl lg:text-4xl'}`}>
+                            {seg.destination}
+                          </h4>
+                          <p className="text-[8px] lg:text-[9px] font-black text-orange-500 uppercase tracking-widest leading-none mt-1">ARR</p>
+                          <div className="mt-2 space-y-0.5">
+                             <div className="flex items-center justify-end gap-1.5">
+                                <p className="text-xs lg:text-sm font-black text-slate-800 leading-none">{seg.arrivalTime}</p>
+                                <Clock size={10} className="text-slate-400" />
+                             </div>
+                             <p className="text-[10px] font-bold text-slate-400 leading-none">{seg.arrivalDate}</p>
+                          </div>
+                       </div>
+                    </div>
+                    
+                    {idx < segmentCount - 1 && (
+                      <div className="h-2 flex items-center justify-center -my-1 shrink-0 opacity-10">
+                         <div className="w-px h-full border-l border-dashed border-slate-900"></div>
                       </div>
-                      <div className="flex-1 flex flex-col items-center">
-                        <div className="text-[10px] font-mono font-bold text-slate-400 mb-1">{seg.flightNo}</div>
-                        <div className="w-full flex items-center gap-2">
-                           <div className="h-0.5 flex-1 bg-slate-200"></div>
-                           <Plane size={18} className="text-blue-500 rotate-90" />
-                           <div className="h-0.5 flex-1 bg-slate-200"></div>
-                        </div>
+                    )}
+                  </div>
+                ))}
+             </div>
+          </div>
+
+          {/* Right Panel: Passengers, Financials & Admin */}
+          <div className="flex-1 flex flex-col min-h-0 bg-slate-50/40">
+             
+             {/* Traveler List */}
+             <div className="flex flex-col flex-[1.2] border-b border-slate-100 min-h-0">
+                <div className="px-4 lg:px-6 py-2 lg:py-3 border-b border-slate-50 bg-slate-50 flex items-center gap-2 shrink-0">
+                  <User size={14} className="text-blue-500" />
+                  <h3 className="text-[11px] lg:text-xs font-black text-slate-800 uppercase tracking-widest">Travelers</h3>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 lg:p-4 space-y-2 lg:space-y-3">
+                   {ticket.passengers.map((p, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5 lg:p-3 bg-white rounded-lg lg:rounded-xl border border-slate-100 shadow-sm">
+                         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                            <div className="w-6 h-6 lg:w-7 lg:h-7 bg-blue-50 rounded-md flex items-center justify-center text-[10px] lg:text-[11px] text-blue-600 font-black shrink-0 border border-blue-100">
+                              {idx + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs lg:text-sm font-black text-slate-800 uppercase truncate leading-tight">
+                                {p.name} {p.type && p.type !== 'Adult' && <span className="text-blue-600 font-black ml-1 uppercase">({p.type})</span>}
+                              </p>
+                              {p.eTicketNo && <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter leading-none mt-1">Cleared</p>}
+                            </div>
+                         </div>
+                         {p.eTicketNo && (
+                           <div className="text-right ml-2 shrink-0">
+                              <p className="text-[8px] lg:text-[9px] font-black text-blue-500 uppercase leading-none">ETKT</p>
+                              <p className="font-mono text-[10px] lg:text-[11px] font-black text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded leading-none mt-1">
+                                {p.eTicketNo}
+                              </p>
+                           </div>
+                         )}
                       </div>
-                      <div className="text-center">
-                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Arrival</p>
-                        <h3 className="text-2xl font-black text-slate-800">{seg.destination}</h3>
+                   ))}
+                </div>
+             </div>
+
+             {/* Financial Section with Toggle */}
+             <div className={`flex flex-col ${isFinancialVisible ? 'flex-1' : 'shrink-0'} border-b border-slate-100 transition-all duration-300 min-h-0 ${!isFinancialVisible ? 'no-print' : ''}`}>
+                <div className="px-4 lg:px-6 py-2 lg:py-3 border-b border-slate-50 bg-slate-50 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Calculator size={14} className="text-emerald-500" />
+                    <h3 className="text-[11px] lg:text-xs font-black text-slate-800 uppercase tracking-widest">Financials</h3>
+                  </div>
+                  <button 
+                    onClick={() => setIsFinancialVisible(!isFinancialVisible)}
+                    className="p-1 text-slate-400 hover:text-emerald-500 transition-colors no-print"
+                    title={isFinancialVisible ? "Hide Financial Info" : "Show Financial Info"}
+                  >
+                    {isFinancialVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                </div>
+                
+                {isFinancialVisible && (
+                  <div className="flex-1 p-3 lg:p-5 flex flex-col justify-center gap-3 lg:gap-4 min-h-0 animate-fadeIn">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-2.5 bg-white rounded-xl border border-slate-100 shadow-sm">
+                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Purchase</p>
+                         <p className="text-xs font-black text-slate-700">{ticket.purchasePrice.toLocaleString()} LKR</p>
+                      </div>
+                      <div className="p-2.5 bg-white rounded-xl border border-slate-100 shadow-sm">
+                         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Sales</p>
+                         <p className="text-xs font-black text-slate-900">{ticket.salesPrice.toLocaleString()} LKR</p>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-1 gap-x-8 gap-y-2">
-                       <div>
-                         <p className="text-[9px] font-black text-blue-500 uppercase flex items-center gap-1">
-                           <PlaneTakeoff size={10}/> DEP DATE & TIME
-                         </p>
-                         <p className="text-xs font-bold text-slate-700">{seg.departureDate} @ <span className="text-sm font-black text-slate-900">{seg.departureTime}</span></p>
-                       </div>
-                       <div>
-                         <p className="text-[9px] font-black text-orange-500 uppercase flex items-center gap-1">
-                           <PlaneLanding size={10}/> ARR DATE & TIME
-                         </p>
-                         <p className="text-xs font-bold text-slate-700">{seg.arrivalDate} @ <span className="text-sm font-black text-slate-900">{seg.arrivalTime}</span></p>
-                       </div>
+                    <div className={`p-3 rounded-xl border font-black flex justify-between items-center ${
+                      ticket.profit >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                         <TrendingUp size={12} />
+                         <span className="text-[10px] uppercase tracking-tighter">Net Profit</span>
+                      </div>
+                      <span className="text-sm">{ticket.profit.toLocaleString()} LKR</span>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                )}
+             </div>
 
-          {/* Passenger Details */}
-          <section>
-            <div className="flex items-center gap-2 mb-6 text-sm font-black text-blue-600 uppercase tracking-widest">
-              <User size={18} /> Passenger List
-            </div>
-            <div className="overflow-hidden border border-slate-100 rounded-3xl">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Passenger Name</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">E-Ticket Number</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {ticket.passengers.map((p, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800">{p.name}</td>
-                      <td className="px-6 py-4 text-right">
-                        {p.eTicketNo ? (
-                          <span className="font-mono text-sm font-bold bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
-                            {p.eTicketNo}
+             {/* Administrative Section with Toggle */}
+             <div className={`flex flex-col ${isAdminVisible ? 'flex-1' : 'shrink-0'} transition-all duration-300 min-h-0 ${!isAdminVisible ? 'no-print' : ''}`}>
+                <div className="px-4 lg:px-6 py-2 lg:py-3 border-b border-slate-50 bg-slate-50 flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Briefcase size={14} className="text-slate-500" />
+                    <h3 className="text-[11px] lg:text-xs font-black text-slate-800 uppercase tracking-widest">Admin</h3>
+                  </div>
+                  <button 
+                    onClick={() => setIsAdminVisible(!isAdminVisible)}
+                    className="p-1 text-slate-400 hover:text-blue-500 transition-colors no-print"
+                    title={isAdminVisible ? "Hide Admin Info" : "Show Admin Info"}
+                  >
+                    {isAdminVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                  </button>
+                </div>
+                
+                {isAdminVisible && (
+                  <div className="flex-1 p-3 lg:p-5 flex flex-col justify-center gap-3 lg:gap-4 min-h-0 animate-fadeIn">
+                    <div className="space-y-2.5 lg:space-y-3">
+                        <div className="p-2.5 lg:p-3.5 bg-white rounded-lg lg:rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                              <div className="p-1.5 bg-blue-50 rounded text-blue-600">
+                                <User size={14} />
+                              </div>
+                              <div>
+                                <p className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest">Agent</p>
+                                <p className="text-xs font-black text-slate-700 uppercase truncate leading-none mt-1">{ticket.customerName || 'Direct'}</p>
+                              </div>
+                          </div>
+                        </div>
+                        <div className="p-2.5 lg:p-3.5 bg-white rounded-lg lg:rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                              <div className="p-1.5 bg-orange-50 rounded text-orange-600">
+                                <Info size={14} />
+                              </div>
+                              <div>
+                                <p className="text-[8px] lg:text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</p>
+                                <p className="text-xs font-black text-slate-700 uppercase truncate leading-none mt-1">{ticket.supplierName || 'Internal'}</p>
+                              </div>
+                          </div>
+                        </div>
+                    </div>
+                    
+                    <div className="p-3 rounded-lg lg:rounded-xl border border-slate-200 bg-white/50 border-dashed">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</span>
+                          <span className={`text-[11px] font-black uppercase px-3 py-1 rounded-full ${
+                              ticket.status === 'Confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                          }`}>
+                              {ticket.status}
                           </span>
-                        ) : (
-                          <span className="text-xs text-slate-300 italic">Not available</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* Business & Logistics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <section className="space-y-6">
-                <div className="flex items-center gap-2 text-sm font-black text-blue-600 uppercase tracking-widest">
-                  <Briefcase size={18} /> Logistics
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Customer / Agent</p>
-                      <p className="text-lg font-black text-slate-800">{ticket.customerName || 'Walk-in'}</p>
-                   </div>
-                   <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Supplier / Airline Direct</p>
-                      <p className="text-lg font-black text-slate-800">{ticket.supplierName || 'Not Assigned'}</p>
-                   </div>
-                </div>
-             </section>
-
-             <section className="space-y-6 no-print">
-                <div className="flex items-center gap-2 text-sm font-black text-blue-600 uppercase tracking-widest">
-                  <CreditCard size={18} /> Financial Overview (Hidden on Export)
-                </div>
-                <div className="bg-blue-600 rounded-3xl p-8 text-white shadow-xl shadow-blue-100 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 p-8 opacity-10">
-                      <CreditCard size={100} />
-                   </div>
-                   <div className="space-y-4 relative z-10">
-                      <div className="flex justify-between items-center border-b border-white/20 pb-3">
-                         <span className="text-xs font-bold text-blue-100 uppercase">Purchase Price</span>
-                         <span className="font-bold">LKR {ticket.purchasePrice.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center border-b border-white/20 pb-3">
-                         <span className="text-xs font-bold text-blue-100 uppercase">Sales Price</span>
-                         <span className="font-bold">LKR {ticket.salesPrice.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-2">
-                         <span className="text-xs font-black text-white uppercase tracking-widest">NET PROFIT</span>
-                         <div className="text-right">
-                            <p className={`text-2xl font-black ${ticket.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                               LKR {ticket.profit.toLocaleString()}
-                            </p>
-                            <span className="text-[10px] font-bold text-blue-100 opacity-70">Automated Calculation</span>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-             </section>
+                        </div>
+                    </div>
+                  </div>
+                )}
+             </div>
           </div>
-          
-          <div className="print-only hidden mt-20 border-t pt-8 text-center text-slate-400">
-             <p className="text-sm font-bold">Thank you for choosing JS Lanka Travels</p>
-             <p className="text-[10px] uppercase tracking-widest mt-1">This is a system generated document</p>
-          </div>
+        </div>
+
+        {/* Footer for Print */}
+        <div className="print-only hidden px-8 py-4 border-t border-slate-100 bg-slate-50 shrink-0">
+           <div className="flex justify-between items-center">
+              <div className="space-y-1">
+                 <h2 className="text-sm font-black text-slate-900 leading-none">JS LANKA TRAVELS</h2>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Air Transportation Solutions</p>
+              </div>
+              <p className="text-[10px] font-bold text-slate-800 uppercase tracking-widest">REF: {ticket.id.slice(0, 8)}</p>
+           </div>
         </div>
       </div>
     </div>

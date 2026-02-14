@@ -69,6 +69,7 @@ const App: React.FC = () => {
           salesPrice: Number(t.sales_price),
           purchasePrice: Number(t.purchase_price),
           profit: Number(t.profit),
+          is_dummy: t.is_dummy,
           isDummy: t.is_dummy,
           status: t.status,
           reminderSent: t.reminder_sent,
@@ -141,7 +142,6 @@ const App: React.FC = () => {
     setTickets(prev => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
   };
 
-  // Improved Navigation Handlers
   const handleViewTicket = (ticket: Ticket) => {
     setViewingTicket(ticket);
     setCurrentView(AppView.VIEW_TICKET);
@@ -154,7 +154,7 @@ const App: React.FC = () => {
 
   const handleSetView = (view: AppView) => {
     if (view === AppView.NEW_TICKET) {
-      setEditingTicket(null); // Clear editing state if clicking "Add Ticket" fresh
+      setEditingTicket(null);
     }
     setCurrentView(view);
   };
@@ -241,7 +241,16 @@ const App: React.FC = () => {
       case AppView.DASHBOARD:
         return <Dashboard stats={stats} tickets={tickets} onViewTicket={handleViewTicket} onSeeAll={() => setCurrentView(AppView.TICKETS)} />;
       case AppView.TICKETS:
-        return <TicketList tickets={tickets} onDelete={deleteTicket} onUpdate={updateTicketFromList} onEdit={handleEditTicket} onView={handleViewTicket} />;
+        return (
+          <TicketList 
+            tickets={tickets} 
+            onDelete={deleteTicket} 
+            onUpdate={updateTicketFromList} 
+            onEdit={handleEditTicket} 
+            onView={handleViewTicket}
+            onAdd={() => handleSetView(AppView.NEW_TICKET)}
+          />
+        );
       case AppView.NEW_TICKET:
         return (
           <TicketForm 

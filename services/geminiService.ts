@@ -13,7 +13,12 @@ const ticketSchema = {
         type: Type.OBJECT,
         properties: {
           name: { type: Type.STRING, description: "Full name of the passenger." },
-          eTicketNo: { type: Type.STRING, description: "Specific electronic ticket number for this passenger." }
+          eTicketNo: { type: Type.STRING, description: "Specific electronic ticket number for this passenger." },
+          type: { 
+            type: Type.STRING, 
+            enum: ["Adult", "Child", "Infant"],
+            description: "The type of passenger. Look for indicators like CHD (Child) or INF (Infant) near names." 
+          }
         },
         required: ["name"]
       },
@@ -59,7 +64,7 @@ export const extractTicketDetails = async (base64Data: string, mimeType: string)
       contents: {
         parts: [
           { inlineData: { data: base64Data, mimeType } },
-          { text: "Extract flight ticket information. Extract ALL flight segments found. For each segment, extract origin, destination, departure date/time, and arrival date/time. Match each passenger with their e-ticket number. Provide details in JSON format." }
+          { text: "Extract flight ticket information. Extract ALL flight segments found. Crucially, identify if a passenger is a Child (CHD) or Infant (INF) and mark their type as 'Child' or 'Infant'. Default is 'Adult'. Provide details in JSON format." }
         ]
       },
       config: {

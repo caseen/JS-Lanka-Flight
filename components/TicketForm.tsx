@@ -50,7 +50,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
     reminderSent: editTicket?.reminderSent || false
   });
 
-  const [currentPassenger, setCurrentPassenger] = useState({ name: '', eTicketNo: '' });
+  const [currentPassenger, setCurrentPassenger] = useState<Passenger>({ name: '', eTicketNo: '', type: 'Adult' });
   const [currentSegment, setCurrentSegment] = useState<FlightSegment>({
     origin: '',
     destination: '',
@@ -148,7 +148,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
       ...prev,
       passengers: [...(prev.passengers || []), { ...currentPassenger }]
     }));
-    setCurrentPassenger({ name: '', eTicketNo: '' });
+    setCurrentPassenger({ name: '', eTicketNo: '', type: 'Adult' });
   };
 
   const addSegment = () => {
@@ -173,14 +173,14 @@ const TicketForm: React.FC<TicketFormProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fadeIn pb-12 relative">
+    <div className="max-w-5xl mx-auto space-y-4 lg:space-y-6 animate-fadeIn pb-12 relative">
       {/* Quick Add Modal Overlay */}
       {quickAddType && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slideUp">
-            <form onSubmit={handleQuickAdd} className="p-8 space-y-6">
+            <form onSubmit={handleQuickAdd} className="p-6 lg:p-8 space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Quick Add {quickAddType}</h3>
+                <h3 className="text-lg lg:text-xl font-black text-slate-800 uppercase tracking-tight">Quick Add {quickAddType}</h3>
                 <button type="button" onClick={() => setQuickAddType(null)} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
               </div>
               <div className="space-y-4">
@@ -188,7 +188,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Name</label>
                   <input 
                     type="text" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder={`${quickAddType === 'customer' ? 'Customer' : 'Supplier'} Name`}
                     value={quickAddData.name}
                     onChange={e => setQuickAddData({...quickAddData, name: e.target.value})}
@@ -200,7 +200,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Info</label>
                   <input 
                     type="text" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     placeholder="Phone or Contact Detail"
                     value={quickAddData.contact}
                     onChange={e => setQuickAddData({...quickAddData, contact: e.target.value})}
@@ -212,7 +212,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
                 disabled={quickAddLoading}
                 className={`w-full py-4 rounded-2xl font-black shadow-lg transition-all flex items-center justify-center gap-2 ${
                   quickAddType === 'customer' ? 'bg-blue-600 shadow-blue-100 hover:bg-blue-700' : 'bg-orange-500 shadow-orange-100 hover:bg-orange-600'
-                } text-white`}
+                } text-white uppercase text-xs tracking-widest`}
               >
                 {quickAddLoading ? <Loader2 className="animate-spin" size={20}/> : <Plus size={20}/>}
                 Save {quickAddType}
@@ -223,15 +223,15 @@ const TicketForm: React.FC<TicketFormProps> = ({
       )}
 
       {/* Upload Box */}
-      <div className="bg-white p-8 rounded-2xl border shadow-sm flex flex-col items-center justify-center border-dashed border-2 border-slate-200">
-        <Upload className="text-blue-500 mb-4" size={48} />
-        <h3 className="text-lg font-bold text-slate-800 mb-2">Ticket AI Scanner</h3>
-        <p className="text-slate-500 text-sm mb-6 text-center max-w-sm">
+      <div className="bg-white p-6 lg:p-8 rounded-2xl border shadow-sm flex flex-col items-center justify-center border-dashed border-2 border-slate-200">
+        <Upload className="text-blue-500 mb-4" size={40} />
+        <h3 className="text-base lg:text-lg font-bold text-slate-800 mb-2 tracking-tight">Ticket AI Scanner</h3>
+        <p className="text-slate-500 text-xs lg:text-sm mb-6 text-center max-w-sm">
           Upload a ticket to automatically extract PNR, Flights, and Passenger names.
         </p>
         
-        <div className="flex flex-col items-center gap-4">
-          <label className={`cursor-pointer px-10 py-3 rounded-full font-bold transition-all flex items-center gap-2 ${
+        <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
+          <label className={`w-full sm:w-auto cursor-pointer px-10 py-3 rounded-full font-bold transition-all flex items-center justify-center gap-2 text-sm ${
             loading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
           }`}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
@@ -241,130 +241,161 @@ const TicketForm: React.FC<TicketFormProps> = ({
           
           {uploadError && (
             <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl max-w-md animate-shake">
-              <div className="flex items-center gap-2 text-rose-600 font-bold text-xs mb-1">
-                <AlertTriangle size={14} /> Upload failed
+              <div className="flex items-center gap-2 text-rose-600 font-bold text-xs mb-1 uppercase">
+                <AlertTriangle size={14} /> Extraction Error
               </div>
-              <p className="text-[11px] text-rose-500 leading-relaxed">{uploadError}</p>
-            </div>
-          )}
-          
-          {formData.ticketFilePath && !uploadError && (
-            <div className="text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 text-xs font-bold flex items-center gap-2">
-              <CheckCircle size={16} /> File successfully stored & analyzed
+              <p className="text-[11px] text-rose-500 leading-relaxed font-medium">{uploadError}</p>
             </div>
           )}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-6">
-            <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-4"><Plane size={20} className="text-blue-500" /> Flight Itinerary</h4>
+        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm space-y-4 lg:space-y-6">
+            <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
+              <Plane size={18} className="text-blue-500" /> Itinerary Details
+            </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input type="text" className="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Airline Name" value={formData.airline || ''} onChange={e => setFormData({ ...formData, airline: e.target.value })} required />
-              <input type="text" className="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all uppercase font-mono font-bold" placeholder="PNR / Locator" value={formData.pnr || ''} onChange={e => setFormData({ ...formData, pnr: e.target.value.toUpperCase() })} required />
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Airline</label>
+                <input type="text" className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-sm" placeholder="e.g. Emirates" value={formData.airline || ''} onChange={e => setFormData({ ...formData, airline: e.target.value })} required />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Booking PNR</label>
+                <input type="text" className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all uppercase font-mono font-black text-sm" placeholder="Locator" value={formData.pnr || ''} onChange={e => setFormData({ ...formData, pnr: e.target.value.toUpperCase() })} required />
+              </div>
             </div>
 
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <input type="text" className="border rounded-lg p-2.5 uppercase" placeholder="Origin" value={currentSegment.origin} onChange={e => setCurrentSegment({...currentSegment, origin: e.target.value.toUpperCase()})} />
-                <input type="text" className="border rounded-lg p-2.5 uppercase" placeholder="Dest" value={currentSegment.destination} onChange={e => setCurrentSegment({...currentSegment, destination: e.target.value.toUpperCase()})} />
-                <input type="text" className="border rounded-lg p-2.5 uppercase" placeholder="Flight #" value={currentSegment.flightNo} onChange={e => setCurrentSegment({...currentSegment, flightNo: e.target.value.toUpperCase()})} />
+            <div className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-200 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <input type="text" className="border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Origin" value={currentSegment.origin} onChange={e => setCurrentSegment({...currentSegment, origin: e.target.value.toUpperCase()})} />
+                <input type="text" className="border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Dest" value={currentSegment.destination} onChange={e => setCurrentSegment({...currentSegment, destination: e.target.value.toUpperCase()})} />
+                <input type="text" className="col-span-2 sm:col-span-1 border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Flight #" value={currentSegment.flightNo} onChange={e => setCurrentSegment({...currentSegment, flightNo: e.target.value.toUpperCase()})} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex gap-2"><input type="date" className="flex-1 border rounded-lg p-2" value={currentSegment.departureDate} onChange={e => setCurrentSegment({...currentSegment, departureDate: e.target.value})} /><input type="time" className="border rounded-lg p-2" value={currentSegment.departureTime} onChange={e => setCurrentSegment({...currentSegment, departureTime: e.target.value})} /></div>
-                <div className="flex gap-2"><input type="date" className="flex-1 border rounded-lg p-2" value={currentSegment.arrivalDate} onChange={e => setCurrentSegment({...currentSegment, arrivalDate: e.target.value})} /><input type="time" className="border rounded-lg p-2" value={currentSegment.arrivalTime} onChange={e => setCurrentSegment({...currentSegment, arrivalTime: e.target.value})} /></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex gap-2">
+                  <input type="date" className="flex-1 border rounded-lg p-2 text-xs font-bold" value={currentSegment.departureDate} onChange={e => setCurrentSegment({...currentSegment, departureDate: e.target.value})} />
+                  <input type="time" className="border rounded-lg p-2 text-xs font-bold" value={currentSegment.departureTime} onChange={e => setCurrentSegment({...currentSegment, departureTime: e.target.value})} />
+                </div>
+                <div className="flex gap-2">
+                  <input type="date" className="flex-1 border rounded-lg p-2 text-xs font-bold" value={currentSegment.arrivalDate} onChange={e => setCurrentSegment({...currentSegment, arrivalDate: e.target.value})} />
+                  <input type="time" className="border rounded-lg p-2 text-xs font-bold" value={currentSegment.arrivalTime} onChange={e => setCurrentSegment({...currentSegment, arrivalTime: e.target.value})} />
+                </div>
               </div>
-              <button type="button" onClick={addSegment} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition-all">Add Flight Segment</button>
+              <button type="button" onClick={addSegment} className="w-full bg-slate-800 text-white py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all active:scale-[0.98]">Add Segment</button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
               {formData.segments?.map((seg, i) => (
-                <div key={i} className="flex items-center justify-between bg-white border p-4 rounded-xl">
-                  <span className="font-bold text-slate-700">{seg.origin} → {seg.destination} <span className="text-blue-500 ml-2">({seg.flightNo})</span></span>
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs text-slate-500">{seg.departureDate}</span>
-                    <button type="button" className="text-rose-400 hover:text-rose-600" onClick={() => setFormData({ ...formData, segments: formData.segments?.filter((_, idx) => idx !== i) })}><X size={20} /></button>
+                <div key={i} className="flex items-center justify-between bg-white border p-3 rounded-xl shadow-sm">
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-700 text-xs sm:text-sm truncate">{seg.origin} → {seg.destination} <span className="text-blue-500 ml-1">({seg.flightNo})</span></div>
+                    <div className="text-[10px] text-slate-400 font-bold">{seg.departureDate} @ {seg.departureTime}</div>
                   </div>
+                  <button type="button" className="p-2 text-rose-400 hover:text-rose-600 shrink-0" onClick={() => setFormData({ ...formData, segments: formData.segments?.filter((_, idx) => idx !== i) })}><X size={18} /></button>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border shadow-sm">
-             <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-4 mb-4"><UserPlus size={20} className="text-blue-500" /> Passenger Information</h4>
-             <div className="flex gap-4 mb-4">
-                <input type="text" className="flex-1 border rounded-xl p-3" placeholder="Passenger Full Name" value={currentPassenger.name} onChange={e => setCurrentPassenger({ ...currentPassenger, name: e.target.value })} />
-                <input type="text" className="flex-1 border rounded-xl p-3 font-mono" placeholder="E-Ticket #" value={currentPassenger.eTicketNo} onChange={e => setCurrentPassenger({ ...currentPassenger, eTicketNo: e.target.value })} />
-                <button type="button" onClick={addPassenger} className="bg-blue-600 text-white px-6 rounded-xl font-bold hover:bg-blue-700">Add</button>
+          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm">
+             <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4 mb-4">
+               <UserPlus size={18} className="text-blue-500" /> Passenger Details
+             </h4>
+             <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <input type="text" className="flex-[3] border rounded-xl p-3 text-sm font-bold" placeholder="Passenger Name" value={currentPassenger.name} onChange={e => setCurrentPassenger({ ...currentPassenger, name: e.target.value })} />
+                <input type="text" className="flex-[2] border rounded-xl p-3 font-mono text-sm font-bold" placeholder="E-Ticket #" value={currentPassenger.eTicketNo} onChange={e => setCurrentPassenger({ ...currentPassenger, eTicketNo: e.target.value })} />
+                <select 
+                  className="flex-1 border rounded-xl p-2.5 text-xs font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+                  value={currentPassenger.type || 'Adult'}
+                  onChange={e => setCurrentPassenger({...currentPassenger, type: e.target.value as any})}
+                >
+                  <option value="Adult">Adult</option>
+                  <option value="Child">Child</option>
+                  <option value="Infant">Infant</option>
+                </select>
+                <button type="button" onClick={addPassenger} className="bg-blue-600 text-white px-6 py-3 sm:py-0 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95">Add</button>
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {formData.passengers?.map((p, i) => (
-                  <div key={i} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border">
-                    <div>
-                      <div className="text-sm font-bold text-slate-800">{p.name}</div>
-                      <div className="text-[10px] font-mono text-slate-400">{p.eTicketNo || 'NO E-TICKET'}</div>
+                  <div key={i} className="flex justify-between items-center bg-slate-50 p-3 lg:p-4 rounded-xl border border-slate-100">
+                    <div className="min-w-0">
+                      <div className="text-xs lg:text-sm font-bold text-slate-800 truncate">
+                        {p.name} {p.type && p.type !== 'Adult' && <span className="text-blue-600 font-black ml-1 uppercase">({p.type})</span>}
+                      </div>
+                      <div className="text-[10px] font-mono font-bold text-slate-400 truncate tracking-tighter">{p.eTicketNo || 'ETKT PENDING'}</div>
                     </div>
-                    <button type="button" className="text-rose-400" onClick={() => setFormData({ ...formData, passengers: formData.passengers?.filter((_, idx) => idx !== i) })}><X size={18} /></button>
+                    <button type="button" className="p-1 text-rose-400 shrink-0" onClick={() => setFormData({ ...formData, passengers: formData.passengers?.filter((_, idx) => idx !== i) })}><X size={16} /></button>
                   </div>
                 ))}
              </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
-            <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-4"><Info size={20} className="text-orange-500" /> General Info</h4>
+        <div className="space-y-4 lg:space-y-6">
+          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm space-y-4">
+            <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
+              <Info size={18} className="text-orange-500" /> Logistic Info
+            </h4>
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Customer / Agent</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Customer / Agent</label>
                 <div className="flex gap-2">
-                  <select className="flex-1 border rounded-xl p-3 bg-white appearance-none cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required>
-                    <option value="">Select Customer</option>
+                  <select className="flex-1 border rounded-xl p-3 bg-white text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none truncate" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required>
+                    <option value="">Select Agent</option>
                     {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
-                  <button type="button" onClick={() => setQuickAddType('customer')} className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-50">
+                  <button type="button" onClick={() => setQuickAddType('customer')} className="p-3 bg-blue-600 text-white rounded-xl shadow-md shrink-0 active:scale-95">
                     <Plus size={20}/>
                   </button>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Supplier / Source</label>
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Supplier</label>
                 <div className="flex gap-2">
-                  <select className="flex-1 border rounded-xl p-3 bg-white appearance-none cursor-pointer focus:ring-2 focus:ring-orange-500 outline-none" value={formData.supplierName} onChange={e => setFormData({ ...formData, supplierName: e.target.value })} required>
-                    <option value="">Select Supplier</option>
+                  <select className="flex-1 border rounded-xl p-3 bg-white text-sm font-bold focus:ring-2 focus:ring-orange-500 outline-none truncate" value={formData.supplierName} onChange={e => setFormData({ ...formData, supplierName: e.target.value })} required>
+                    <option value="">Select Source</option>
                     {suppliers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                   </select>
-                  <button type="button" onClick={() => setQuickAddType('supplier')} className="p-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-all shadow-md shadow-orange-50">
+                  <button type="button" onClick={() => setQuickAddType('supplier')} className="p-3 bg-orange-500 text-white rounded-xl shadow-md shrink-0 active:scale-95">
                     <Plus size={20}/>
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border">
-                <span className="text-sm font-bold text-slate-700">Dummy Ticket</span>
-                <input type="checkbox" className="w-5 h-5 accent-orange-500" checked={formData.isDummy} onChange={e => setFormData({...formData, isDummy: e.target.checked})} />
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Dummy Booking</span>
+                <input type="checkbox" className="w-5 h-5 accent-orange-500 rounded" checked={formData.isDummy} onChange={e => setFormData({...formData, isDummy: e.target.checked})} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
-            <h4 className="font-bold text-slate-800 flex items-center gap-2 border-b pb-4"><Calculator size={20} className="text-emerald-500" /> Pricing</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <input type="number" className="border rounded-xl p-3" placeholder="Purchase LKR" value={formData.purchasePrice || ''} onChange={e => setFormData({ ...formData, purchasePrice: Number(e.target.value) })} required />
-              <input type="number" className="border rounded-xl p-3" placeholder="Sales LKR" value={formData.salesPrice || ''} onChange={e => setFormData({ ...formData, salesPrice: Number(e.target.value) })} required />
+          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm space-y-4">
+            <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
+              <Calculator size={18} className="text-emerald-500" /> Financials
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-slate-400 uppercase px-1">Purchase</p>
+                <input type="number" className="w-full border rounded-xl p-3 text-sm font-bold" value={formData.purchasePrice || ''} onChange={e => setFormData({ ...formData, purchasePrice: Number(e.target.value) })} required />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[9px] font-black text-slate-400 uppercase px-1">Sales</p>
+                <input type="number" className="w-full border rounded-xl p-3 text-sm font-bold" value={formData.salesPrice || ''} onChange={e => setFormData({ ...formData, salesPrice: Number(e.target.value) })} required />
+              </div>
             </div>
-            <div className={`p-5 rounded-2xl border font-black flex justify-between items-center ${
+            <div className={`p-4 rounded-xl border font-black flex justify-between items-center ${
               (formData.profit || 0) >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
             }`}>
-              <span className="text-[10px] uppercase tracking-tighter">Net Profit</span>
-              <span className="text-xl">{(formData.profit || 0).toLocaleString()} LKR</span>
+              <span className="text-[9px] uppercase tracking-tighter">Profit</span>
+              <span className="text-base">{(formData.profit || 0).toLocaleString()} LKR</span>
             </div>
           </div>
 
-          <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black text-xl shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95">
-            {editTicket ? 'Update Record' : 'Save Booking'}
+          <button type="submit" className="w-full py-4 lg:py-5 bg-blue-600 text-white rounded-3xl font-black text-base lg:text-lg shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 sticky bottom-4 z-10">
+            {editTicket ? 'Update Ticket' : 'Save Booking'}
           </button>
         </div>
       </form>
