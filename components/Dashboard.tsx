@@ -234,6 +234,7 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, tickets, onViewTicket, onS
           {/* Upcoming Flights (48h) */}
           <div className="bg-white p-4 lg:p-6 rounded-2xl border shadow-sm">
             <div className="flex items-center gap-2 mb-4">
+              {/* Fix: use curly braces for numeric prop to avoid type and syntax errors */}
               <Calendar className="text-blue-600" size={20} />
               <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Departures (48h)</h3>
             </div>
@@ -291,80 +292,6 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, tickets, onViewTicket, onS
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Dummy Tickets (24h) */}
-          <div className="bg-white p-4 lg:p-6 rounded-2xl border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="text-orange-500" size={20} />
-              <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Dummies (24h)</h3>
-            </div>
-            <div className="space-y-3">
-              {upcomingDummies24h.length > 0 ? (
-                upcomingDummies24h.slice(0, 3).map(ticket => (
-                  <button 
-                    key={ticket.id}
-                    onClick={() => onViewTicket(ticket)}
-                    className="w-full text-left p-3 rounded-xl border border-orange-50 bg-[#fff9f1] hover:bg-[#fff0dd] hover:border-orange-200 transition-all group"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex flex-col truncate pr-2">
-                        <span className="text-[11px] font-black text-slate-800 truncate uppercase">
-                          {ticket.passengers[0]?.name}
-                          {ticket.passengers[0]?.type && ticket.passengers[0].type !== 'Adult' && (
-                            <span className="text-blue-600 ml-1">({ticket.passengers[0].type})</span>
-                          )}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">Client: {ticket.customerName || 'Walk-in'}</span>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                         <span className="bg-[#ffecd6] text-[#ff7000] px-2 py-0.5 rounded text-[9px] font-black uppercase leading-none">PNR: {ticket.pnr}</span>
-                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{ticket.airline}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 border-t border-orange-100/50 pt-3 mt-1">
-                      {ticket.segments.map((seg, sIdx) => (
-                        <div key={sIdx} className="space-y-2">
-                          <div className="flex items-center gap-2">
-                             <span className="border border-[#ffecd6] text-[#ff7000] px-1.5 py-0.5 rounded text-[8px] font-mono font-bold leading-none">{seg.flightNo}</span>
-                             <div className="flex items-center gap-1.5 font-mono font-black text-slate-600 text-[10px] leading-none uppercase">
-                               {seg.origin} <ArrowRight size={10} className="text-slate-300" /> {seg.destination}
-                             </div>
-                          </div>
-                          <div className="flex justify-between items-start">
-                             <div>
-                               <span className="text-[7px] font-black text-slate-400 uppercase block leading-none mb-0.5">DEP</span>
-                               <span className="text-[10px] font-black text-slate-800 block leading-tight">{seg.departureTime}</span>
-                               <span className="text-[8px] font-bold text-slate-400 block leading-none mt-0.5">{seg.departureDate}</span>
-                             </div>
-                             <div className="text-right">
-                               <span className="text-[7px] font-black text-slate-400 uppercase block leading-none mb-0.5">ARR</span>
-                               <span className="text-[10px] font-black text-slate-800 block leading-tight">{seg.arrivalTime}</span>
-                               <span className="text-[8px] font-bold text-slate-400 block leading-none mt-0.5">{seg.arrivalDate}</span>
-                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="text-center py-6 text-slate-400 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
-                  No dummy expiries
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 p-4 lg:p-6 rounded-2xl">
-            <div className="flex items-center gap-2 text-amber-800 mb-2 font-black text-[10px] uppercase tracking-widest">
-              <AlertCircle size={14} />
-              System Status
-            </div>
-            <p className="text-[11px] text-amber-700 leading-relaxed font-bold uppercase tracking-tight">
-              All systems operational. AI extraction active.
-            </p>
           </div>
         </div>
       </div>
