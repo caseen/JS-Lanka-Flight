@@ -92,20 +92,20 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
   };
 
   return (
-    <div className="space-y-4 lg:space-y-6 animate-fadeIn pb-12 relative">
+    <div className="space-y-6 animate-fadeIn pb-12 relative">
       {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-slideUp">
-            <div className="p-6 lg:p-8 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 lg:w-16 lg:h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
+            <div className="p-8 text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center">
                 <AlertTriangle size={32} />
               </div>
               <div>
-                <h3 className="text-lg lg:text-xl font-black text-slate-800">Confirm Deletion</h3>
-                <p className="text-xs lg:text-sm text-slate-500 mt-2">Are you sure you want to delete this ticket? This action cannot be undone.</p>
+                <h3 className="text-xl font-black text-slate-800">Confirm Deletion</h3>
+                <p className="text-sm text-slate-500 mt-2">Are you sure you want to delete this ticket? This action cannot be undone.</p>
               </div>
-              <div className="flex flex-col gap-2 pt-2 lg:pt-4">
+              <div className="flex flex-col gap-2 pt-4">
                 <button 
                   onClick={handleConfirmDelete}
                   className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black shadow-lg shadow-rose-100 transition-all active:scale-95"
@@ -125,47 +125,46 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
       )}
 
       {/* Search & Filter Bar */}
-      <div className="bg-white p-3 lg:p-4 rounded-2xl border shadow-sm flex flex-col gap-3 items-center">
-        <div className="relative w-full">
+      <div className="bg-white p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text"
-            placeholder="Search Passenger, PNR..."
-            className="w-full pl-10 pr-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
+            placeholder="Search Passenger, PNR, Airport..."
+            className="w-full pl-10 pr-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
         
-        <div className="flex flex-wrap gap-2 w-full">
+        <div className="flex gap-2 w-full md:w-auto">
           <select 
-            className="flex-1 px-3 py-2 border rounded-xl outline-none bg-white text-xs font-black uppercase tracking-tight"
+            className="flex-1 px-4 py-2 border rounded-xl outline-none bg-white text-sm font-bold"
             value={filterAirline}
             onChange={e => setFilterAirline(e.target.value)}
           >
             {airlines.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           <select 
-            className="flex-1 px-3 py-2 border rounded-xl outline-none bg-white text-xs font-black uppercase tracking-tight"
+            className="flex-1 px-4 py-2 border rounded-xl outline-none bg-white text-sm font-bold"
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
           >
-            <option value="All">Status</option>
+            <option value="All">All Status</option>
             <option value="Confirmed">Confirmed</option>
             <option value="Cancelled">Cancelled</option>
             <option value="Changed">Changed</option>
           </select>
           <button 
             onClick={exportToCSV}
-            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors shrink-0"
-            title="Export CSV"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors text-sm font-bold"
           >
             <Download size={18} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
         {filteredTickets.map(ticket => {
           const isDummy = ticket.isDummy;
           const themeBg = isDummy ? 'bg-[#fff5e9]' : 'bg-[#f0f7ff]';
@@ -175,20 +174,20 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
           const flightBadgeText = isDummy ? 'text-[#e67e22]' : 'text-[#2563eb]';
           
           return (
-            <div key={ticket.id} className={`${themeBg} ${themeBorder} rounded-[2rem] lg:rounded-[2.5rem] border shadow-sm overflow-hidden flex flex-col transition-all hover:shadow-lg group`}>
-              <div className="p-5 lg:p-8 pb-4">
+            <div key={ticket.id} className={`${themeBg} ${themeBorder} rounded-[2.5rem] border shadow-sm overflow-hidden flex flex-col transition-all hover:shadow-lg group`}>
+              <div className="p-8 pb-4">
                 {/* Header Row */}
-                <div className="flex justify-between items-start gap-2 mb-4 lg:mb-6">
-                  <div className="space-y-3 min-w-0 flex-1">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="space-y-4">
                     {ticket.passengers.map((p, pIdx) => (
-                      <div key={pIdx} className="truncate">
-                        <h4 className="font-black text-slate-800 text-sm lg:text-base uppercase tracking-tight leading-none truncate">
+                      <div key={pIdx}>
+                        <h4 className="font-black text-slate-800 text-base uppercase tracking-tight leading-none">
                           {p.name}
                         </h4>
                         {p.eTicketNo && (
                           <div className="flex items-center gap-1.5 text-slate-400 mt-1">
                             <TicketIcon size={10} className="shrink-0" />
-                            <span className="text-[9px] lg:text-[10px] font-bold font-mono uppercase tracking-tighter truncate">
+                            <span className="text-[10px] font-bold font-mono uppercase tracking-tighter">
                               {p.eTicketNo}
                             </span>
                           </div>
@@ -196,47 +195,47 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
                       </div>
                     ))}
                     <div className="pt-2 border-t border-black/5 mt-2">
-                       <p className="text-slate-400 text-[10px] font-bold truncate">
+                       <p className="text-slate-400 text-[11px] font-bold">
                         Client: <span className="text-slate-600 font-black uppercase">{ticket.customerName || 'Walk-in'}</span>
                       </p>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className={`font-black text-xs lg:text-sm uppercase tracking-tighter ${pnrColor}`}>
+                    <p className={`font-black text-sm uppercase tracking-tighter ${pnrColor}`}>
                       PNR: {ticket.pnr}
                     </p>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                       {ticket.airline}
                     </p>
                   </div>
                 </div>
 
                 {/* Segments Section */}
-                <div className="space-y-4 lg:space-y-6 my-4 lg:my-6">
+                <div className="space-y-6 my-6">
                   {ticket.segments.map((seg, idx) => (
-                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-black/5 pb-3 sm:border-0 sm:pb-0 last:border-0">
+                    <div key={idx} className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <span className={`px-2 py-0.5 border rounded-md font-mono text-[8px] lg:text-[9px] font-black uppercase tracking-tight bg-white shrink-0 ${flightBadgeBorder} ${flightBadgeText}`}>
+                        <span className={`px-2 py-0.5 border rounded-md font-mono text-[9px] font-black uppercase tracking-tight bg-white ${flightBadgeBorder} ${flightBadgeText}`}>
                           {seg.flightNo}
                         </span>
-                        <div className="flex items-center gap-1.5 font-mono font-black text-slate-700 text-xs lg:text-sm">
+                        <div className="flex items-center gap-2 font-mono font-black text-slate-700 text-sm">
                           <span>{seg.origin}</span>
-                          <ArrowRight size={12} className="text-slate-300" />
+                          <ArrowRight size={14} className="text-slate-300" />
                           <span>{seg.destination}</span>
                         </div>
                       </div>
                       
                       {/* Unified Times Grid */}
-                      <div className="flex gap-4 shrink-0 justify-between sm:justify-end text-right">
+                      <div className="flex gap-4 shrink-0 text-right">
                         <div>
-                          <p className="text-[7px] font-black text-slate-400 uppercase leading-none mb-0.5">Dep</p>
-                          <p className="font-black text-slate-800 text-xs lg:text-sm leading-none">{seg.departureTime}</p>
-                          <p className="text-[8px] lg:text-[9px] font-bold text-slate-400/80 mt-1">{seg.departureDate}</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-0.5">Dep</p>
+                          <p className="font-black text-slate-800 text-sm leading-none">{seg.departureTime}</p>
+                          <p className="text-[9px] font-bold text-slate-400/80 mt-1">{seg.departureDate}</p>
                         </div>
                         <div>
-                          <p className="text-[7px] font-black text-slate-400 uppercase leading-none mb-0.5">Arr</p>
-                          <p className="font-black text-slate-800 text-xs lg:text-sm leading-none">{seg.arrivalTime}</p>
-                          <p className="text-[8px] lg:text-[9px] font-bold text-slate-400/80 mt-1">{seg.arrivalDate}</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase leading-none mb-0.5">Arr</p>
+                          <p className="font-black text-slate-800 text-sm leading-none">{seg.arrivalTime}</p>
+                          <p className="text-[9px] font-bold text-slate-400/80 mt-1">{seg.arrivalDate}</p>
                         </div>
                       </div>
                     </div>
@@ -245,9 +244,9 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
               </div>
 
               {/* Action Bar */}
-              <div className="px-5 lg:px-8 py-3 lg:py-4 bg-white/50 border-t border-black/5 flex items-center justify-between mt-auto">
-                <div className="flex flex-wrap gap-1.5 max-w-[50%]">
-                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest ${
+              <div className="px-8 py-4 bg-white/50 border-t border-black/5 flex items-center justify-between mt-auto">
+                <div className="flex gap-2">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
                     ticket.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' :
                     ticket.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' :
                     'bg-amber-100 text-amber-700'
@@ -255,41 +254,41 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
                     {ticket.status}
                   </span>
                   {isDummy && (
-                    <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0">
+                    <span className="bg-orange-500 text-white px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">
                       Dummy
                     </span>
                   )}
                 </div>
-                <div className="flex gap-1 lg:gap-1.5">
+                <div className="flex gap-1.5">
                   <button 
                     onClick={() => handleReminderToggle(ticket.id)}
-                    className={`p-1.5 lg:p-2 rounded-xl transition-all ${
+                    className={`p-2 rounded-xl transition-all ${
                       ticket.reminderSent ? 'bg-orange-500 text-white' : 'hover:bg-orange-100/50 text-slate-400 hover:text-orange-600'
                     }`}
+                    title="Toggle Reminder"
                   >
-                    <Bell size={16} className="lg:hidden" />
-                    <Bell size={18} className="hidden lg:block" />
+                    <Bell size={18} />
                   </button>
                   <button 
                     onClick={() => onView(ticket)}
-                    className="p-1.5 lg:p-2 hover:bg-emerald-100/50 text-slate-400 hover:text-emerald-600 rounded-xl transition-all"
+                    className="p-2 hover:bg-emerald-100/50 text-slate-400 hover:text-emerald-600 rounded-xl transition-all"
+                    title="View Ticket"
                   >
-                    <Eye size={16} className="lg:hidden" />
-                    <Eye size={18} className="hidden lg:block" />
+                    <Eye size={18} />
                   </button>
                   <button 
                     onClick={() => onEdit(ticket)}
-                    className="p-1.5 lg:p-2 hover:bg-blue-100/50 text-slate-400 hover:text-blue-600 rounded-xl transition-all"
+                    className="p-2 hover:bg-blue-100/50 text-slate-400 hover:text-blue-600 rounded-xl transition-all"
+                    title="Edit Ticket"
                   >
-                    <Edit size={16} className="lg:hidden" />
-                    <Edit size={18} className="hidden lg:block" />
+                    <Edit size={18} />
                   </button>
                   <button 
                     onClick={() => initiateDelete(ticket.id)}
-                    className="p-1.5 lg:p-2 hover:bg-rose-100/50 text-slate-400 hover:text-rose-600 rounded-xl transition-all"
+                    className="p-2 hover:bg-rose-100/50 text-slate-400 hover:text-rose-600 rounded-xl transition-all"
+                    title="Delete Ticket"
                   >
-                    <Trash2 size={16} className="lg:hidden" />
-                    <Trash2 size={18} className="hidden lg:block" />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
@@ -298,12 +297,12 @@ const TicketList: React.FC<TicketListProps> = ({ tickets, onDelete, onUpdate, on
         })}
 
         {filteredTickets.length === 0 && (
-          <div className="col-span-full py-12 lg:py-20 text-center">
-             <div className="w-16 h-16 lg:w-24 lg:h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Search size={32} className="text-slate-300" />
+          <div className="col-span-full py-20 text-center">
+             <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search size={40} className="text-slate-300" />
              </div>
-             <h3 className="text-xl lg:text-2xl font-black text-slate-800 px-4">No matching tickets</h3>
-             <p className="text-slate-500 max-w-sm mx-auto mt-2 text-xs lg:text-sm px-6">Try adjusting your filters or search keywords to find what you're looking for.</p>
+             <h3 className="text-2xl font-black text-slate-800">No matching tickets</h3>
+             <p className="text-slate-500 max-w-sm mx-auto mt-2">Try adjusting your filters or search keywords to find what you're looking for.</p>
           </div>
         )}
       </div>
