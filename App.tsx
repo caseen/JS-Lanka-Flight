@@ -1,15 +1,14 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppView, Ticket, Customer, Supplier } from './types';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import TicketList from './components/TicketList';
-import TicketForm from './components/TicketForm';
-import Management from './components/Management';
-import BookingDetails from './components/BookingDetails';
-import SignIn from './components/SignIn';
-import SignUp from './components/SignUp';
-import { supabase } from './supabaseClient';
+import { AppView, Ticket, Customer, Supplier } from './types.ts';
+import Layout from './components/Layout.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import TicketList from './components/TicketList.tsx';
+import TicketForm from './components/TicketForm.tsx';
+import Management from './components/Management.tsx';
+import BookingDetails from './components/BookingDetails.tsx';
+import SignIn from './components/SignIn.tsx';
+import SignUp from './components/SignUp.tsx';
+import { supabase } from './supabaseClient.ts';
 import { User } from '@supabase/supabase-js';
 
 const App: React.FC = () => {

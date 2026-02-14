@@ -8,12 +8,36 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Babel standalone for browser-side JSX/TSX transpilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Process shim for browser compatibility with process.env -->
+    <script>
+      window.process = {
+        env: {
+          NODE_ENV: 'production',
+          // Netlify environment variables are usually injected at build time.
+          // For a pure client-side Babel app, ensure the API_KEY is handled or shimmed.
+          API_KEY: undefined 
+        }
+      };
+    </script>
+
     <style>
       body {
         font-family: 'Inter', sans-serif;
         background-color: #f8fafc;
+      }
+      /* Ensure the app is visible even during slow script loading */
+      #root:empty::after {
+        content: 'Loading Flight Management System...';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        color: #64748b;
+        font-weight: 500;
       }
     </style>
   <script type="importmap">
@@ -32,7 +56,15 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- Load the main entry point as a module transpiled by Babel -->
-    <script type="text/babel" data-type="module" src="index.tsx"></script>
+    <!-- 
+      Using type="text/babel" + data-type="module" + data-presets 
+      is required for Babel Standalone to handle TSX files correctly in the browser.
+    -->
+    <script 
+      type="text/babel" 
+      data-type="module" 
+      data-presets="react,typescript" 
+      src="index.tsx"
+    ></script>
   </body>
 </html>
