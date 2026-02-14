@@ -1,15 +1,14 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppView, Ticket, Customer, Supplier } from './types';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import TicketList from './components/TicketList';
-import TicketForm from './components/TicketForm';
-import Management from './components/Management';
-import BookingDetails from './components/BookingDetails';
-import SignIn from './components/SignIn';
-import SignUp from './components/SignUp';
-import { supabase } from './supabaseClient';
+import { AppView, Ticket, Customer, Supplier } from './types.ts';
+import Layout from './components/Layout.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import TicketList from './components/TicketList.tsx';
+import TicketForm from './components/TicketForm.tsx';
+import Management from './components/Management.tsx';
+import BookingDetails from './components/BookingDetails.tsx';
+import SignIn from './components/SignIn.tsx';
+import SignUp from './components/SignUp.tsx';
+import { supabase } from './supabaseClient.ts';
 import { User } from '@supabase/supabase-js';
 
 const App: React.FC = () => {
@@ -24,7 +23,6 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  // Initial data load on mount
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -38,14 +36,10 @@ const App: React.FC = () => {
 
     checkSession();
 
-    // Prevent auto-reloading data when the tab is switched/focused by restricting auth events.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const user = session?.user ?? null;
       setSessionUser(user);
       
-      // We only load data on an explicit SIGNED_IN event if we don't already have it.
-      // Supabase's onAuthStateChange often fires events like INITIAL_SESSION or TOKEN_REFRESHED 
-      // when the browser tab is focused. We ignore those here to stop "auto loading".
       if (event === 'SIGNED_IN' && tickets.length === 0) {
         loadData();
       } else if (event === 'SIGNED_OUT') {

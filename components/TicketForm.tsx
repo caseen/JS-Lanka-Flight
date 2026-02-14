@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Loader2, CheckCircle, Calculator, Info, UserPlus, Plane, Plus, AlertTriangle, User } from 'lucide-react';
-import { Ticket, Customer, Supplier, Passenger, FlightSegment } from '../types';
-import { extractTicketDetails } from '../services/geminiService';
-import { supabase } from '../supabaseClient';
+import { Ticket, Customer, Supplier, Passenger, FlightSegment } from '../types.ts';
+import { extractTicketDetails } from '../services/geminiService.ts';
+import { supabase } from '../supabaseClient.ts';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface TicketFormProps {
@@ -86,21 +85,6 @@ const TicketForm: React.FC<TicketFormProps> = ({
         reader.readAsDataURL(file);
       });
 
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const storagePath = `${sessionUser.id}/tickets/${stableId}/${fileName}`;
-
-      const { error: supabaseError } = await supabase.storage
-        .from('app-files')
-        .upload(storagePath, file, { 
-          upsert: true, 
-          contentType: file.type 
-        });
-
-      if (supabaseError) {
-        throw new Error(supabaseError.message);
-      }
-
       const details = await extractTicketDetails(base64, file.type);
       
       setFormData(prev => ({
@@ -109,36 +93,13 @@ const TicketForm: React.FC<TicketFormProps> = ({
         segments: details.segments || prev.segments,
         pnr: details.pnr || prev.pnr,
         airline: details.airlineName || prev.airline,
-        issuedDate: details.issuedDate || prev.issuedDate,
-        ticketFilePath: storagePath
+        issuedDate: details.issuedDate || prev.issuedDate
       }));
     } catch (error: any) {
       setUploadError(error.message);
     } finally {
       setLoading(false);
       e.target.value = '';
-    }
-  };
-
-  const handleQuickAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickAddData.name.trim()) return;
-
-    setQuickAddLoading(true);
-    try {
-      if (quickAddType === 'customer') {
-        const added = await onAddCustomer({ name: quickAddData.name, phone: quickAddData.contact } as Customer);
-        if (added) setFormData(prev => ({ ...prev, customerName: added.name }));
-      } else if (quickAddType === 'supplier') {
-        const added = await onAddSupplier({ name: quickAddData.name, contact: quickAddData.contact } as Supplier);
-        if (added) setFormData(prev => ({ ...prev, supplierName: added.name }));
-      }
-      setQuickAddType(null);
-      setQuickAddData({ name: '', contact: '' });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setQuickAddLoading(false);
     }
   };
 
@@ -173,230 +134,52 @@ const TicketForm: React.FC<TicketFormProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4 lg:space-y-6 animate-fadeIn pb-12 relative">
-      {/* Quick Add Modal Overlay */}
-      {quickAddType && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-slideUp">
-            <form onSubmit={handleQuickAdd} className="p-6 lg:p-8 space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg lg:text-xl font-black text-slate-800 uppercase tracking-tight">Quick Add {quickAddType}</h3>
-                <button type="button" onClick={() => setQuickAddType(null)} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
-              </div>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Name</label>
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder={`${quickAddType === 'customer' ? 'Customer' : 'Supplier'} Name`}
-                    value={quickAddData.name}
-                    onChange={e => setQuickAddData({...quickAddData, name: e.target.value})}
-                    required
-                    autoFocus
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Info</label>
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Phone or Contact Detail"
-                    value={quickAddData.contact}
-                    onChange={e => setQuickAddData({...quickAddData, contact: e.target.value})}
-                  />
-                </div>
-              </div>
-              <button 
-                type="submit" 
-                disabled={quickAddLoading}
-                className={`w-full py-4 rounded-2xl font-black shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  quickAddType === 'customer' ? 'bg-blue-600 shadow-blue-100 hover:bg-blue-700' : 'bg-orange-500 shadow-orange-100 hover:bg-orange-600'
-                } text-white uppercase text-xs tracking-widest`}
-              >
-                {quickAddLoading ? <Loader2 className="animate-spin" size={20}/> : <Plus size={20}/>}
-                Save {quickAddType}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Box */}
-      <div className="bg-white p-6 lg:p-8 rounded-2xl border shadow-sm flex flex-col items-center justify-center border-dashed border-2 border-slate-200">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      <div className="bg-white p-8 rounded-2xl border shadow-sm flex flex-col items-center justify-center border-dashed border-2 border-slate-200">
         <Upload className="text-blue-500 mb-4" size={40} />
-        <h3 className="text-base lg:text-lg font-bold text-slate-800 mb-2 tracking-tight">Ticket AI Scanner</h3>
-        <p className="text-slate-500 text-xs lg:text-sm mb-6 text-center max-w-sm">
-          Upload a ticket to automatically extract PNR, Flights, and Passenger names.
-        </p>
-        
-        <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
-          <label className={`w-full sm:w-auto cursor-pointer px-10 py-3 rounded-full font-bold transition-all flex items-center justify-center gap-2 text-sm ${
-            loading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
-          }`}>
-            {loading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
-            {loading ? 'Analyzing...' : 'Upload Ticket'}
-            <input type="file" className="hidden" onChange={handleFileChange} accept="image/*,application/pdf" disabled={loading} />
-          </label>
-          
-          {uploadError && (
-            <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl max-w-md animate-shake">
-              <div className="flex items-center gap-2 text-rose-600 font-bold text-xs mb-1 uppercase">
-                <AlertTriangle size={14} /> Extraction Error
-              </div>
-              <p className="text-[11px] text-rose-500 leading-relaxed font-medium">{uploadError}</p>
-            </div>
-          )}
-        </div>
+        <h3 className="text-lg font-bold text-slate-800 mb-2">Ticket AI Scanner</h3>
+        <label className={`cursor-pointer px-10 py-3 rounded-full font-bold transition-all flex items-center justify-center gap-2 text-sm ${
+          loading ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+        }`}>
+          {loading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+          {loading ? 'Analyzing...' : 'Upload Ticket'}
+          <input type="file" className="hidden" onChange={handleFileChange} accept="image/*,application/pdf" disabled={loading} />
+        </label>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm space-y-4 lg:space-y-6">
-            <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-6">
+            <h4 className="font-black text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
               <Plane size={18} className="text-blue-500" /> Itinerary Details
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Airline</label>
-                <input type="text" className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-sm" placeholder="e.g. Emirates" value={formData.airline || ''} onChange={e => setFormData({ ...formData, airline: e.target.value })} required />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Booking PNR</label>
-                <input type="text" className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all uppercase font-mono font-black text-sm" placeholder="Locator" value={formData.pnr || ''} onChange={e => setFormData({ ...formData, pnr: e.target.value.toUpperCase() })} required />
-              </div>
+              <input type="text" className="w-full border rounded-xl p-3" placeholder="Airline" value={formData.airline || ''} onChange={e => setFormData({ ...formData, airline: e.target.value })} required />
+              <input type="text" className="w-full border rounded-xl p-3 uppercase" placeholder="Booking PNR" value={formData.pnr || ''} onChange={e => setFormData({ ...formData, pnr: e.target.value.toUpperCase() })} required />
             </div>
-
-            <div className="bg-slate-50 p-4 lg:p-6 rounded-2xl border border-slate-200 space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+              <div className="grid grid-cols-3 gap-3">
                 <input type="text" className="border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Origin" value={currentSegment.origin} onChange={e => setCurrentSegment({...currentSegment, origin: e.target.value.toUpperCase()})} />
                 <input type="text" className="border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Dest" value={currentSegment.destination} onChange={e => setCurrentSegment({...currentSegment, destination: e.target.value.toUpperCase()})} />
-                <input type="text" className="col-span-2 sm:col-span-1 border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Flight #" value={currentSegment.flightNo} onChange={e => setCurrentSegment({...currentSegment, flightNo: e.target.value.toUpperCase()})} />
+                <input type="text" className="border rounded-lg p-2.5 uppercase text-xs font-bold" placeholder="Flight #" value={currentSegment.flightNo} onChange={e => setCurrentSegment({...currentSegment, flightNo: e.target.value.toUpperCase()})} />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex gap-2">
-                  <input type="date" className="flex-1 border rounded-lg p-2 text-xs font-bold" value={currentSegment.departureDate} onChange={e => setCurrentSegment({...currentSegment, departureDate: e.target.value})} />
-                  <input type="time" className="border rounded-lg p-2 text-xs font-bold" value={currentSegment.departureTime} onChange={e => setCurrentSegment({...currentSegment, departureTime: e.target.value})} />
-                </div>
-                <div className="flex gap-2">
-                  <input type="date" className="flex-1 border rounded-lg p-2 text-xs font-bold" value={currentSegment.arrivalDate} onChange={e => setCurrentSegment({...currentSegment, arrivalDate: e.target.value})} />
-                  <input type="time" className="border rounded-lg p-2 text-xs font-bold" value={currentSegment.arrivalTime} onChange={e => setCurrentSegment({...currentSegment, arrivalTime: e.target.value})} />
-                </div>
-              </div>
-              <button type="button" onClick={addSegment} className="w-full bg-slate-800 text-white py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all active:scale-[0.98]">Add Segment</button>
+              <button type="button" onClick={addSegment} className="w-full bg-slate-800 text-white py-3 rounded-xl font-black text-xs uppercase">Add Segment</button>
             </div>
-
-            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-              {formData.segments?.map((seg, i) => (
-                <div key={i} className="flex items-center justify-between bg-white border p-3 rounded-xl shadow-sm">
-                  <div className="min-w-0">
-                    <div className="font-bold text-slate-700 text-xs sm:text-sm truncate">{seg.origin} → {seg.destination} <span className="text-blue-500 ml-1">({seg.flightNo})</span></div>
-                    <div className="text-[10px] text-slate-400 font-bold">{seg.departureDate} @ {seg.departureTime}</div>
-                  </div>
-                  <button type="button" className="p-2 text-rose-400 hover:text-rose-600 shrink-0" onClick={() => setFormData({ ...formData, segments: formData.segments?.filter((_, idx) => idx !== i) })}><X size={18} /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm">
-             <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4 mb-4">
-               <UserPlus size={18} className="text-blue-500" /> Passenger Details
-             </h4>
-             <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <input type="text" className="flex-[3] border rounded-xl p-3 text-sm font-bold" placeholder="Passenger Name" value={currentPassenger.name} onChange={e => setCurrentPassenger({ ...currentPassenger, name: e.target.value })} />
-                <input type="text" className="flex-[2] border rounded-xl p-3 font-mono text-sm font-bold" placeholder="E-Ticket #" value={currentPassenger.eTicketNo} onChange={e => setCurrentPassenger({ ...currentPassenger, eTicketNo: e.target.value })} />
-                <select 
-                  className="flex-1 border rounded-xl p-2.5 text-xs font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
-                  value={currentPassenger.type || 'Adult'}
-                  onChange={e => setCurrentPassenger({...currentPassenger, type: e.target.value as any})}
-                >
-                  <option value="Adult">Adult</option>
-                  <option value="Child">Child</option>
-                  <option value="Infant">Infant</option>
-                </select>
-                <button type="button" onClick={addPassenger} className="bg-blue-600 text-white px-6 py-3 sm:py-0 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 active:scale-95">Add</button>
-             </div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {formData.passengers?.map((p, i) => (
-                  <div key={i} className="flex justify-between items-center bg-slate-50 p-3 lg:p-4 rounded-xl border border-slate-100">
-                    <div className="min-w-0">
-                      <div className="text-xs lg:text-sm font-bold text-slate-800 truncate">
-                        {p.name} {p.type && p.type !== 'Adult' && <span className="text-blue-600 font-black ml-1 uppercase">({p.type})</span>}
-                      </div>
-                      <div className="text-[10px] font-mono font-bold text-slate-400 truncate tracking-tighter">{p.eTicketNo || 'ETKT PENDING'}</div>
-                    </div>
-                    <button type="button" className="p-1 text-rose-400 shrink-0" onClick={() => setFormData({ ...formData, passengers: formData.passengers?.filter((_, idx) => idx !== i) })}><X size={16} /></button>
-                  </div>
-                ))}
-             </div>
           </div>
         </div>
 
-        <div className="space-y-4 lg:space-y-6">
-          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm space-y-4">
-            <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
-              <Info size={18} className="text-orange-500" /> Logistic Info
-            </h4>
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Customer / Agent</label>
-                <div className="flex gap-2">
-                  <select className="flex-1 border rounded-xl p-3 bg-white text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none truncate" value={formData.customerName} onChange={e => setFormData({ ...formData, customerName: e.target.value })} required>
-                    <option value="">Select Agent</option>
-                    {customers.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                  </select>
-                  <button type="button" onClick={() => setQuickAddType('customer')} className="p-3 bg-blue-600 text-white rounded-xl shadow-md shrink-0 active:scale-95">
-                    <Plus size={20}/>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Supplier</label>
-                <div className="flex gap-2">
-                  <select className="flex-1 border rounded-xl p-3 bg-white text-sm font-bold focus:ring-2 focus:ring-orange-500 outline-none truncate" value={formData.supplierName} onChange={e => setFormData({ ...formData, supplierName: e.target.value })} required>
-                    <option value="">Select Source</option>
-                    {suppliers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                  </select>
-                  <button type="button" onClick={() => setQuickAddType('supplier')} className="p-3 bg-orange-500 text-white rounded-xl shadow-md shrink-0 active:scale-95">
-                    <Plus size={20}/>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Dummy Booking</span>
-                <input type="checkbox" className="w-5 h-5 accent-orange-500 rounded" checked={formData.isDummy} onChange={e => setFormData({...formData, isDummy: e.target.checked})} />
-              </div>
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-4">
+            <h4 className="font-black text-xs text-slate-800 uppercase tracking-widest border-b pb-4">Financials</h4>
+            <input type="number" className="w-full border rounded-xl p-3" placeholder="Purchase Price" value={formData.purchasePrice || ''} onChange={e => setFormData({ ...formData, purchasePrice: Number(e.target.value) })} required />
+            <input type="number" className="w-full border rounded-xl p-3" placeholder="Sales Price" value={formData.salesPrice || ''} onChange={e => setFormData({ ...formData, salesPrice: Number(e.target.value) })} required />
+            <div className="p-4 rounded-xl border font-black flex justify-between items-center bg-emerald-50 text-emerald-700">
+              <span className="text-[10px] uppercase">Profit</span>
+              <span>{(formData.profit || 0).toLocaleString()} LKR</span>
             </div>
           </div>
-
-          <div className="bg-white p-5 lg:p-6 rounded-2xl border shadow-sm space-y-4">
-            <h4 className="font-black text-[10px] lg:text-xs text-slate-800 uppercase tracking-widest flex items-center gap-2 border-b pb-4">
-              <Calculator size={18} className="text-emerald-500" /> Financials
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-[9px] font-black text-slate-400 uppercase px-1">Purchase</p>
-                <input type="number" className="w-full border rounded-xl p-3 text-sm font-bold" value={formData.purchasePrice || ''} onChange={e => setFormData({ ...formData, purchasePrice: Number(e.target.value) })} required />
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] font-black text-slate-400 uppercase px-1">Sales</p>
-                <input type="number" className="w-full border rounded-xl p-3 text-sm font-bold" value={formData.salesPrice || ''} onChange={e => setFormData({ ...formData, salesPrice: Number(e.target.value) })} required />
-              </div>
-            </div>
-            <div className={`p-4 rounded-xl border font-black flex justify-between items-center ${
-              (formData.profit || 0) >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-rose-50 border-rose-100 text-rose-700'
-            }`}>
-              <span className="text-[9px] uppercase tracking-tighter">Profit</span>
-              <span className="text-base">{(formData.profit || 0).toLocaleString()} LKR</span>
-            </div>
-          </div>
-
-          <button type="submit" className="w-full py-4 lg:py-5 bg-blue-600 text-white rounded-3xl font-black text-base lg:text-lg shadow-2xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 sticky bottom-4 z-10">
-            {editTicket ? 'Update Ticket' : 'Save Booking'}
-          </button>
+          <button type="submit" className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black text-lg shadow-xl hover:bg-blue-700">Save Booking</button>
         </div>
       </form>
     </div>

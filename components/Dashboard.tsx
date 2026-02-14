@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { 
   TrendingUp, 
@@ -14,7 +13,7 @@ import {
   Zap
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { DashboardStats, Ticket } from '../types';
+import { DashboardStats, Ticket } from '../types.ts';
 
 interface DashboardProps {
   stats: DashboardStats;
@@ -31,7 +30,6 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, tickets, onViewTicket, onS
   ];
 
   const now = new Date();
-  const next24h = new Date(now.getTime() + (24 * 60 * 60 * 1000));
   const next48h = new Date(now.getTime() + (48 * 60 * 60 * 1000));
 
   const upcomingFlights48h = useMemo(() => {
@@ -39,20 +37,6 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, tickets, onViewTicket, onS
       return t.segments.some(seg => {
         const depDate = new Date(`${seg.departureDate}T${seg.departureTime || '00:00'}`);
         return depDate >= now && depDate <= next48h;
-      });
-    }).sort((a, b) => {
-      const aDate = new Date(`${a.segments[0].departureDate}T${a.segments[0].departureTime || '00:00'}`);
-      const bDate = new Date(`${b.segments[0].departureDate}T${b.segments[0].departureTime || '00:00'}`);
-      return aDate.getTime() - bDate.getTime();
-    });
-  }, [tickets]);
-
-  const upcomingDummies24h = useMemo(() => {
-    return tickets.filter(t => {
-      if (!t.isDummy) return false;
-      return t.segments.some(seg => {
-        const depDate = new Date(`${seg.departureDate}T${seg.departureTime || '00:00'}`);
-        return depDate >= now && depDate <= next24h;
       });
     }).sort((a, b) => {
       const aDate = new Date(`${a.segments[0].departureDate}T${a.segments[0].departureTime || '00:00'}`);
@@ -96,22 +80,17 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, tickets, onViewTicket, onS
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Charts and Main Table */}
-        <div className="lg:col-span-2 space-y-4 lg:space-y-6 order-2 lg:order-1">
-          {/* Chart Section */}
-          <div className="bg-white p-4 lg:p-6 rounded-2xl border shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-slate-800 text-base lg:text-lg tracking-tight uppercase">Financial Overview</h3>
-              <span className="text-[10px] lg:text-xs text-slate-500 font-black uppercase tracking-widest">Current Month</span>
-            </div>
-            <div className="h-[200px] lg:h-[300px] w-full">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white p-6 rounded-2xl border shadow-sm">
+            <h3 className="font-bold text-slate-800 text-lg tracking-tight uppercase mb-6">Financial Overview</h3>
+            <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700 }} />
-                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value">
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -119,253 +98,6 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, tickets, onViewTicket, onS
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-
-          {/* Recent Tickets Table */}
-          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-            <div className="p-4 lg:p-6 border-b flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-base lg:text-lg tracking-tight uppercase">Recent Tickets</h3>
-              <button 
-                onClick={onSeeAll}
-                className="text-blue-600 text-xs lg:text-sm font-black uppercase tracking-tight hover:underline"
-              >
-                View All
-              </button>
-            </div>
-            <div className="overflow-x-auto -mx-0">
-              <table className="w-full text-left min-w-[700px] lg:min-w-full border-collapse">
-                <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-black">
-                  <tr>
-                    <th className="px-4 lg:px-6 py-4">Passenger / Airline</th>
-                    <th className="px-4 lg:px-6 py-4">Itinerary (Full Path)</th>
-                    <th className="px-4 lg:px-6 py-4">PNR</th>
-                    <th className="px-4 lg:px-6 py-4">Dummy</th>
-                    <th className="px-4 lg:px-6 py-4">Client</th>
-                    <th className="px-4 lg:px-6 py-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {tickets.slice(0, 5).map(ticket => {
-                    const firstSegment = ticket.segments[0];
-                    // Construct the full itinerary path for multicity
-                    const path = [];
-                    if (ticket.segments.length > 0) {
-                      path.push(ticket.segments[0].origin);
-                      ticket.segments.forEach(s => {
-                        if (path[path.length - 1] !== s.destination) {
-                          path.push(s.destination);
-                        }
-                      });
-                    }
-                    
-                    return (
-                      <tr 
-                        key={ticket.id} 
-                        className="hover:bg-blue-50/50 cursor-pointer transition-colors group"
-                        onClick={() => onViewTicket(ticket)}
-                      >
-                        {/* Passenger / Airline */}
-                        <td className="px-4 lg:px-6 py-4">
-                          <div className="font-black text-slate-800 text-[13px] uppercase tracking-tight truncate max-w-[150px]">
-                            {ticket.passengers[0]?.name || 'N/A'}
-                            {ticket.passengers[0]?.type && ticket.passengers[0].type !== 'Adult' && (
-                              <span className="text-blue-600 ml-1">({ticket.passengers[0].type})</span>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{ticket.airline}</div>
-                        </td>
-                        
-                        {/* Itinerary (Full Path) */}
-                        <td className="px-4 lg:px-6 py-4">
-                          <div className="flex flex-wrap items-center gap-1 font-mono text-[10px] lg:text-[11px] font-black text-slate-700 uppercase">
-                            {path.map((city, idx) => (
-                              <React.Fragment key={idx}>
-                                <span>{city}</span>
-                                {idx < path.length - 1 && <ArrowRight size={10} className="text-slate-300" />}
-                              </React.Fragment>
-                            ))}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-bold mt-0.5">
-                            {firstSegment?.departureDate} @ <span className="text-slate-600">{firstSegment?.departureTime}</span>
-                          </div>
-                        </td>
-
-                        {/* PNR */}
-                        <td className="px-4 lg:px-6 py-4">
-                          <span className="font-mono text-[11px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
-                            {ticket.pnr}
-                          </span>
-                        </td>
-
-                        {/* Dummy */}
-                        <td className="px-4 lg:px-6 py-4">
-                          {ticket.isDummy ? (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-orange-100 text-orange-600">
-                              Yes
-                            </span>
-                          ) : (
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">No</span>
-                          )}
-                        </td>
-
-                        {/* Client */}
-                        <td className="px-4 lg:px-6 py-4">
-                          <div className="text-xs font-bold text-slate-700 uppercase truncate max-w-[120px]">
-                            {ticket.customerName || 'Walk-in'}
-                          </div>
-                        </td>
-
-                        {/* Action */}
-                        <td className="px-4 lg:px-6 py-4 text-right">
-                          <button className="p-1.5 bg-slate-50 group-hover:bg-white border rounded-lg text-slate-400 group-hover:text-blue-600 transition-all">
-                            <Eye size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Special Lists */}
-        <div className="space-y-4 lg:space-y-6 order-1 lg:order-2">
-          {/* Upcoming Flights (48h) */}
-          <div className="bg-white p-4 lg:p-6 rounded-2xl border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="text-blue-600" size={20} />
-              <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Departures (48h)</h3>
-            </div>
-            <div className="space-y-3">
-              {upcomingFlights48h.length > 0 ? (
-                upcomingFlights48h.slice(0, 3).map(ticket => (
-                  <button 
-                    key={ticket.id}
-                    onClick={() => onViewTicket(ticket)}
-                    className="w-full text-left p-3 rounded-xl border border-slate-50 bg-slate-50 hover:bg-blue-50 hover:border-blue-100 transition-all group"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex flex-col truncate pr-2">
-                        <span className="text-[11px] font-black text-slate-800 truncate uppercase">
-                          {ticket.passengers[0]?.name}
-                          {ticket.passengers[0]?.type && ticket.passengers[0].type !== 'Adult' && (
-                            <span className="text-blue-600 ml-1">({ticket.passengers[0].type})</span>
-                          )}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Client: {ticket.customerName || 'Walk-in'}</span>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-[9px] font-black text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded uppercase h-fit">{ticket.airline}</span>
-                        <span className="text-[8px] font-mono font-bold text-slate-400 uppercase tracking-tighter">PNR: {ticket.pnr}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 border-t border-slate-200/50 pt-2 mt-1">
-                      {ticket.segments.slice(0, 2).map((seg, sIdx) => (
-                        <div key={sIdx} className="space-y-1">
-                          <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-slate-600 truncate uppercase">
-                             <span className="bg-white border border-slate-200 px-1 rounded text-[8px] text-blue-500">{seg.flightNo}</span>
-                             {seg.origin} <ArrowRight size={8} className="text-slate-300" /> {seg.destination}
-                          </div>
-                          <div className="flex justify-between items-start">
-                            <div className="flex flex-col">
-                              <span className="text-[7px] font-black text-slate-400 uppercase leading-none mb-0.5">Dep</span>
-                              <span className="text-[10px] font-black text-slate-800 leading-tight">{seg.departureTime}</span>
-                              <span className="text-[8px] text-slate-400 font-medium leading-none">{seg.departureDate}</span>
-                            </div>
-                            <div className="flex flex-col items-end">
-                              <span className="text-[7px] font-black text-slate-400 uppercase leading-none mb-0.5">Arr</span>
-                              <span className="text-[10px] font-black text-slate-800 leading-tight">{seg.arrivalTime}</span>
-                              <span className="text-[8px] text-slate-400 font-medium leading-none">{seg.arrivalDate}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="text-center py-6 text-slate-400 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
-                  No departures soon
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Dummy Tickets (24h) */}
-          <div className="bg-white p-4 lg:p-6 rounded-2xl border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="text-orange-500" size={20} />
-              <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Dummies (24h)</h3>
-            </div>
-            <div className="space-y-3">
-              {upcomingDummies24h.length > 0 ? (
-                upcomingDummies24h.slice(0, 3).map(ticket => (
-                  <button 
-                    key={ticket.id}
-                    onClick={() => onViewTicket(ticket)}
-                    className="w-full text-left p-3 rounded-xl border border-orange-50 bg-[#fff9f1] hover:bg-[#fff0dd] hover:border-orange-200 transition-all group"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex flex-col truncate pr-2">
-                        <span className="text-[11px] font-black text-slate-800 truncate uppercase">
-                          {ticket.passengers[0]?.name}
-                          {ticket.passengers[0]?.type && ticket.passengers[0].type !== 'Adult' && (
-                            <span className="text-blue-600 ml-1">({ticket.passengers[0].type})</span>
-                          )}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter leading-none mt-1">Client: {ticket.customerName || 'Walk-in'}</span>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                         <span className="bg-[#ffecd6] text-[#ff7000] px-2 py-0.5 rounded text-[9px] font-black uppercase leading-none">PNR: {ticket.pnr}</span>
-                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{ticket.airline}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 border-t border-orange-100/50 pt-3 mt-1">
-                      {ticket.segments.map((seg, sIdx) => (
-                        <div key={sIdx} className="space-y-2">
-                          <div className="flex items-center gap-2">
-                             <span className="border border-[#ffecd6] text-[#ff7000] px-1.5 py-0.5 rounded text-[8px] font-mono font-bold leading-none">{seg.flightNo}</span>
-                             <div className="flex items-center gap-1.5 font-mono font-black text-slate-600 text-[10px] leading-none uppercase">
-                               {seg.origin} <ArrowRight size={10} className="text-slate-300" /> {seg.destination}
-                             </div>
-                          </div>
-                          <div className="flex justify-between items-start">
-                             <div>
-                               <span className="text-[7px] font-black text-slate-400 uppercase block leading-none mb-0.5">DEP</span>
-                               <span className="text-[10px] font-black text-slate-800 block leading-tight">{seg.departureTime}</span>
-                               <span className="text-[8px] font-bold text-slate-400 block leading-none mt-0.5">{seg.departureDate}</span>
-                             </div>
-                             <div className="text-right">
-                               <span className="text-[7px] font-black text-slate-400 uppercase block leading-none mb-0.5">ARR</span>
-                               <span className="text-[10px] font-black text-slate-800 block leading-tight">{seg.arrivalTime}</span>
-                               <span className="text-[8px] font-bold text-slate-400 block leading-none mt-0.5">{seg.arrivalDate}</span>
-                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="text-center py-6 text-slate-400 text-[10px] font-black uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-xl">
-                  No dummy expiries
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-amber-50 border border-amber-200 p-4 lg:p-6 rounded-2xl">
-            <div className="flex items-center gap-2 text-amber-800 mb-2 font-black text-[10px] uppercase tracking-widest">
-              <AlertCircle size={14} />
-              System Status
-            </div>
-            <p className="text-[11px] text-amber-700 leading-relaxed font-bold uppercase tracking-tight">
-              All systems operational. AI extraction active.
-            </p>
           </div>
         </div>
       </div>
@@ -382,24 +114,21 @@ const StatCard: React.FC<{
   subLabel?: string;
   valueColor?: string;
 }> = ({ label, value, icon, trend, trendType, subLabel, valueColor }) => (
-  <div className="bg-white p-4 lg:p-6 rounded-2xl border shadow-sm group hover:shadow-md transition-all">
-    <div className="flex items-center justify-between mb-3 lg:mb-4">
-      <div className="p-2.5 lg:p-3 bg-slate-50 rounded-xl group-hover:bg-slate-100 transition-colors shrink-0">
-        {icon}
-      </div>
+  <div className="bg-white p-6 rounded-2xl border shadow-sm group hover:shadow-md transition-all">
+    <div className="flex items-center justify-between mb-4">
+      <div className="p-3 bg-slate-50 rounded-xl">{icon}</div>
       {trend && (
-        <span className={`flex items-center text-[10px] font-black px-2 py-0.5 lg:py-1 rounded-full ${
+        <span className={`flex items-center text-[10px] font-black px-2 py-1 rounded-full ${
           trendType === 'up' ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
         }`}>
-          {trendType === 'up' ? <ArrowUpRight size={12} /> : <ArrowUpRight size={12} className="rotate-90" />}
           {trend}
         </span>
       )}
     </div>
     <div className="space-y-1">
-      <h4 className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</h4>
-      <div className={`text-xl lg:text-2xl font-black tracking-tighter ${valueColor || 'text-slate-900'} truncate`}>{value}</div>
-      {subLabel && <p className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest">{subLabel}</p>}
+      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</h4>
+      <div className={`text-2xl font-black tracking-tighter ${valueColor || 'text-slate-900'}`}>{value}</div>
+      {subLabel && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{subLabel}</p>}
     </div>
   </div>
 );
