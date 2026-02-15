@@ -1,8 +1,15 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Always use process.env.API_KEY directly as a named parameter
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Standardize the API key retrieval from the environment
+const getApiKey = () => {
+  const key = process.env.API_KEY;
+  if (!key) {
+    console.warn("Gemini API Key is missing. AI extraction features will be disabled.");
+  }
+  return key || "";
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 const ticketSchema = {
   type: Type.OBJECT,
@@ -58,6 +65,10 @@ const ticketSchema = {
 };
 
 export const extractTicketDetails = async (base64Data: string, mimeType: string) => {
+  if (!process.env.API_KEY) {
+    throw new Error("AI extraction is unavailable because the API key is not configured.");
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
