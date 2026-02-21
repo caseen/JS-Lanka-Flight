@@ -2,7 +2,7 @@
 export interface Passenger {
   name: string;
   eTicketNo: string;
-  type?: 'Adult' | 'Child' | 'Infant';
+  type?: 'ADT' | 'CHD' | 'INF';
 }
 
 export interface FlightSegment {

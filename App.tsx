@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { AppView, Ticket, Customer, Supplier } from './types.ts';
-import Layout from './components/Layout.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import TicketList from './components/TicketList.tsx';
-import TicketForm from './components/TicketForm.tsx';
-import Management from './components/Management.tsx';
-import BookingDetails from './components/BookingDetails.tsx';
-import SignIn from './components/SignIn.tsx';
-import SignUp from './components/SignUp.tsx';
-import { supabase } from './supabaseClient.ts';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { AppView, Ticket, Customer, Supplier } from './types';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
+import TicketList from './components/TicketList';
+import TicketForm from './components/TicketForm';
+import Management from './components/Management';
+import BookingDetails from './components/BookingDetails';
+import SignIn from './components/SignIn';
+import SignUp from './components/SignUp';
+import { supabase } from './supabaseClient';
 import { User } from '@supabase/supabase-js';
+import { CheckCircle, X } from 'lucide-react';
 
 const App: React.FC = () => {
   const [sessionUser, setSessionUser] = useState<User | null>(null);
@@ -22,39 +23,10 @@ const App: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<{id: string, message: string, time: Date}[]>([]);
+  const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSessionUser(session?.user ?? null);
-      if (session?.user) {
-        await loadData();
-      } else {
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const user = session?.user ?? null;
-      setSessionUser(user);
-      
-      if (event === 'SIGNED_IN' && tickets.length === 0) {
-        loadData();
-      } else if (event === 'SIGNED_OUT') {
-        setTickets([]);
-        setCustomers([]);
-        setSuppliers([]);
-        setCurrentView(AppView.DASHBOARD);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const loadData = async () => {
-    if (tickets.length === 0) setLoading(true);
+  const loadData = useCallback(async () => {
     try {
       const [ticketsRes, customersRes, suppliersRes] = await Promise.all([
         supabase.from('tickets').select('*').order('created_at', { ascending: false }),
@@ -75,7 +47,6 @@ const App: React.FC = () => {
           salesPrice: Number(t.sales_price),
           purchasePrice: Number(t.purchase_price),
           profit: Number(t.profit),
-          is_dummy: t.is_dummy,
           isDummy: t.is_dummy,
           status: t.status,
           reminderSent: t.reminder_sent,
@@ -88,42 +59,132 @@ const App: React.FC = () => {
       if (suppliersRes.data) setSuppliers(suppliersRes.data);
     } catch (err) {
       console.error("Load error:", err);
-    } finally {
-      setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSessionUser(session?.user ?? null);
+      if (session?.user) {
+        await loadData();
+      }
+      setLoading(false);
+    };
+
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = session?.user ?? null;
+      setSessionUser(user);
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        loadData();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [loadData]);
+
+  // Automated Notification Engine - Checks ALL segments
+  useEffect(() => {
+    if (tickets.length === 0) return;
+    const now = new Date();
+    const twentyFourHoursFromNow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+    const fortyEightHoursFromNow = new Date(now.getTime() + (48 * 60 * 60 * 1000));
+    const newAlerts: {message: string, id: string}[] = [];
+
+    tickets.forEach(ticket => {
+      const totalSegs = ticket.segments.length;
+      ticket.segments.forEach((seg, idx) => {
+        const depDate = new Date(`${seg.departureDate} ${seg.departureTime || '00:00'}`);
+        const legInfo = totalSegs > 1 ? ` (Leg ${idx + 1}/${totalSegs})` : '';
+        
+        if (ticket.isDummy && depDate >= now && depDate <= twentyFourHoursFromNow) {
+          const msg = `⚠️ ${ticket.pnr}${legInfo} - Flight ${seg.origin}→${seg.destination} departs in <24h!`;
+          if (!notifications.some(n => n.message === msg)) {
+            newAlerts.push({ message: msg, id: `dummy-${ticket.id}-${idx}` });
+          }
+        } 
+        else if (!ticket.isDummy && depDate >= now && depDate <= fortyEightHoursFromNow) {
+          const msg = `✈️ ${ticket.pnr}${legInfo} - Flight ${seg.origin}→${seg.destination} departs in <48h.`;
+          if (!notifications.some(n => n.message === msg)) {
+            newAlerts.push({ message: msg, id: `flight-${ticket.id}-${idx}` });
+          }
+        }
+      });
+    });
+
+    if (newAlerts.length > 0) {
+      setNotifications(prev => [
+        ...newAlerts.map(a => ({
+          id: a.id + '-' + Math.random().toString(36).substr(2, 5),
+          message: a.message,
+          time: new Date()
+        })),
+        ...prev
+      ].slice(0, 30));
+    }
+  }, [tickets, notifications.length]);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const addNotification = (message: string) => {
+    setNotifications(prev => [{
+      id: Math.random().toString(36).substr(2, 9),
+      message,
+      time: new Date()
+    }, ...prev].slice(0, 30));
   };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    setSessionUser(null);
+    setTickets([]);
+    setCustomers([]);
+    setSuppliers([]);
+    setNotifications([]);
+    setCurrentView(AppView.DASHBOARD);
   };
 
   const handleSaveTicket = async (ticket: Ticket) => {
-    const dbData = {
-      passengers: ticket.passengers,
-      segments: ticket.segments,
-      pnr: ticket.pnr,
-      issued_date: ticket.issuedDate,
-      airline: ticket.airline,
-      customer_name: ticket.customerName,
-      supplier_name: ticket.supplierName,
-      sales_price: ticket.salesPrice,
-      purchase_price: ticket.purchasePrice,
-      profit: ticket.profit,
-      is_dummy: ticket.isDummy,
-      status: ticket.status,
-      reminder_sent: ticket.reminderSent,
-      ticket_file_path: ticket.ticketFilePath
-    };
+    try {
+      const dbData = {
+        passengers: ticket.passengers,
+        segments: ticket.segments,
+        pnr: ticket.pnr,
+        issued_date: ticket.issuedDate,
+        airline: ticket.airline,
+        customer_name: ticket.customerName,
+        supplier_name: ticket.supplierName,
+        sales_price: ticket.salesPrice,
+        purchase_price: ticket.purchasePrice,
+        profit: ticket.profit,
+        is_dummy: ticket.isDummy,
+        status: ticket.status,
+        reminder_sent: ticket.reminderSent,
+        ticket_file_path: ticket.ticketFilePath
+      };
 
-    if (editingTicket) {
-      await supabase.from('tickets').update(dbData).eq('id', ticket.id);
-    } else {
-      await supabase.from('tickets').insert([dbData]);
+      if (editingTicket) {
+        await supabase.from('tickets').update(dbData).eq('id', ticket.id);
+      } else {
+        await supabase.from('tickets').insert([dbData]);
+      }
+      
+      const successMsg = `Ticket ${ticket.pnr} (${ticket.airline}) ${editingTicket ? 'updated' : 'saved'} successfully.`;
+      showToast(successMsg);
+      addNotification(successMsg);
+
+      await loadData();
+      setEditingTicket(null);
+      setCurrentView(AppView.TICKETS);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save ticket', 'error');
     }
-    
-    await loadData();
-    setEditingTicket(null);
-    setCurrentView(AppView.TICKETS);
   };
 
   const deleteTicket = async (id: string) => {
@@ -133,6 +194,8 @@ const App: React.FC = () => {
     }
     await supabase.from('tickets').delete().eq('id', id);
     setTickets(prev => prev.filter(t => t.id !== id));
+    showToast('Ticket deleted successfully');
+    addNotification(`Ticket ${ticket?.pnr} removed from system.`);
   };
 
   const updateTicketFromList = async (updatedTicket: Ticket) => {
@@ -161,39 +224,117 @@ const App: React.FC = () => {
   };
 
   const addCustomer = async (customer: Customer) => {
+    // Duplicate check
+    const exists = customers.some(c => c.name.trim().toLowerCase() === customer.name.trim().toLowerCase());
+    if (exists) {
+      showToast(`Customer "${customer.name}" already exists!`, 'error');
+      return undefined;
+    }
+
     const { data } = await supabase.from('customers').insert([{ name: customer.name, phone: customer.phone }]).select();
     if (data) {
       setCustomers(prev => [...prev, data[0]]);
+      showToast(`Customer ${customer.name} added`);
+      addNotification(`New customer added: ${customer.name}`);
       return data[0];
     }
   };
 
   const updateCustomer = async (updated: Customer) => {
-    await supabase.from('customers').update({ name: updated.name, phone: updated.phone }).eq('id', updated.id);
+    const oldCustomer = customers.find(c => c.id === updated.id);
+    if (!oldCustomer) return;
+
+    // Duplicate check against OTHER customers
+    const exists = customers.some(c => c.id !== updated.id && c.name.trim().toLowerCase() === updated.name.trim().toLowerCase());
+    if (exists) {
+      showToast(`Another customer with name "${updated.name}" already exists!`, 'error');
+      return;
+    }
+
     setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
+    
+    if (oldCustomer.name !== updated.name) {
+      setTickets(prev => prev.map(t => 
+        t.customerName === oldCustomer.name ? { ...t, customerName: updated.name } : t
+      ));
+    }
+
+    try {
+      const { error } = await supabase.from('customers').update({ name: updated.name, phone: updated.phone }).eq('id', updated.id);
+      
+      if (!error && oldCustomer.name !== updated.name) {
+        await supabase.from('tickets').update({ customer_name: updated.name }).eq('customer_name', oldCustomer.name);
+      }
+      
+      showToast(`Customer "${updated.name}" updated successfully`);
+    } catch (err) {
+      console.error("Update customer error:", err);
+      showToast("Sync error. Please refresh.", "error");
+      loadData(); 
+    }
   };
 
   const deleteCustomer = async (id: string) => {
     await supabase.from('customers').delete().eq('id', id);
     setCustomers(prev => prev.filter(c => c.id !== id));
+    showToast(`Customer removed`);
   };
   
   const addSupplier = async (supplier: Supplier) => {
+    // Duplicate check
+    const exists = suppliers.some(s => s.name.trim().toLowerCase() === supplier.name.trim().toLowerCase());
+    if (exists) {
+      showToast(`Supplier "${supplier.name}" already exists!`, 'error');
+      return undefined;
+    }
+
     const { data } = await supabase.from('suppliers').insert([{ name: supplier.name, contact: supplier.contact }]).select();
     if (data) {
       setSuppliers(prev => [...prev, data[0]]);
+      showToast(`Supplier ${supplier.name} added`);
+      addNotification(`New supplier added: ${supplier.name}`);
       return data[0];
     }
   };
 
   const updateSupplier = async (updated: Supplier) => {
-    await supabase.from('suppliers').update({ name: updated.name, contact: updated.contact }).eq('id', updated.id);
+    const oldSupplier = suppliers.find(s => s.id === updated.id);
+    if (!oldSupplier) return;
+
+    // Duplicate check against OTHER suppliers
+    const exists = suppliers.some(s => s.id !== updated.id && s.name.trim().toLowerCase() === updated.name.trim().toLowerCase());
+    if (exists) {
+      showToast(`Another supplier with name "${updated.name}" already exists!`, 'error');
+      return;
+    }
+
     setSuppliers(prev => prev.map(s => s.id === updated.id ? updated : s));
+
+    if (oldSupplier.name !== updated.name) {
+      setTickets(prev => prev.map(t => 
+        t.supplierName === oldSupplier.name ? { ...t, supplierName: updated.name } : t
+      ));
+    }
+
+    try {
+      const { error } = await supabase.from('suppliers').update({ name: updated.name, contact: updated.contact }).eq('id', updated.id);
+      
+      if (!error && oldSupplier.name !== updated.name) {
+        await supabase.from('tickets').update({ supplier_name: updated.name }).eq('supplier_name', oldSupplier.name);
+      }
+      
+      showToast(`Supplier "${updated.name}" updated successfully`);
+    } catch (err) {
+      console.error("Update supplier error:", err);
+      showToast("Sync error. Please refresh.", "error");
+      loadData(); 
+    }
   };
 
   const deleteSupplier = async (id: string) => {
     await supabase.from('suppliers').delete().eq('id', id);
     setSuppliers(prev => prev.filter(s => s.id !== id));
+    showToast(`Supplier removed`);
   };
 
   const stats = useMemo(() => {
@@ -205,20 +346,24 @@ const App: React.FC = () => {
     const now = new Date();
     const fortyEightHoursFromNow = new Date(now.getTime() + (48 * 60 * 60 * 1000));
     
-    const upcomingFlights = tickets.filter(t => {
-      return t.segments.some(seg => {
-        const flightDate = new Date(seg.departureDate);
-        return flightDate >= now && flightDate <= fortyEightHoursFromNow;
+    // Count all segments across all tickets that fall in 48h
+    let upcomingSegmentsCount = 0;
+    tickets.forEach(t => {
+      t.segments.forEach(seg => {
+        const depDate = new Date(`${seg.departureDate} ${seg.departureTime || '00:00'}`);
+        if (depDate >= now && depDate <= fortyEightHoursFromNow) {
+          upcomingSegmentsCount++;
+        }
       });
-    }).length;
+    });
 
-    return {
-      totalTickets: tickets.length,
-      totalSales,
-      totalPurchase,
-      totalProfit,
-      upcomingFlights,
-      dummyCount
+    return { 
+      totalTickets: tickets.length, 
+      totalSales, 
+      totalPurchase, 
+      totalProfit, 
+      upcomingFlights: upcomingSegmentsCount, 
+      dummyCount 
     };
   }, [tickets]);
 
@@ -237,44 +382,6 @@ const App: React.FC = () => {
       : <SignUp onSwitch={() => setAuthView('signin')} />;
   }
 
-  const renderView = () => {
-    switch (currentView) {
-      case AppView.DASHBOARD:
-        return <Dashboard stats={stats} tickets={tickets} onViewTicket={handleViewTicket} onSeeAll={() => setCurrentView(AppView.TICKETS)} />;
-      case AppView.TICKETS:
-        return (
-          <TicketList 
-            tickets={tickets} 
-            onDelete={deleteTicket} 
-            onUpdate={updateTicketFromList} 
-            onEdit={handleEditTicket} 
-            onView={handleViewTicket}
-            onAdd={() => handleSetView(AppView.NEW_TICKET)}
-          />
-        );
-      case AppView.NEW_TICKET:
-        return (
-          <TicketForm 
-            onSave={handleSaveTicket} 
-            customers={customers} 
-            suppliers={suppliers} 
-            editTicket={editingTicket || undefined} 
-            sessionUser={sessionUser} 
-            onAddCustomer={addCustomer}
-            onAddSupplier={addSupplier}
-          />
-        );
-      case AppView.VIEW_TICKET:
-        return viewingTicket ? <BookingDetails ticket={viewingTicket} onBack={() => setCurrentView(AppView.TICKETS)} onEdit={handleEditTicket} /> : null;
-      case AppView.CUSTOMERS:
-        return <Management type="Customer" items={customers} onAdd={addCustomer} onUpdate={updateCustomer} onDelete={deleteCustomer} />;
-      case AppView.SUPPLIERS:
-        return <Management type="Supplier" items={suppliers} onAdd={addSupplier} onUpdate={updateSupplier} onDelete={deleteSupplier} />;
-      default:
-        return <Dashboard stats={stats} tickets={tickets} onViewTicket={handleViewTicket} onSeeAll={() => setCurrentView(AppView.TICKETS)} />;
-    }
-  };
-
   return (
     <Layout 
       currentView={currentView} 
@@ -283,8 +390,52 @@ const App: React.FC = () => {
       setIsSidebarOpen={setIsSidebarOpen}
       user={sessionUser}
       onSignOut={handleSignOut}
+      notifications={notifications}
+      onClearNotifications={() => setNotifications([])}
     >
-      {renderView()}
+      {toast && (
+        <div className="fixed top-6 right-6 z-[200] animate-slideDown">
+          <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${
+            toast.type === 'success' 
+              ? 'bg-emerald-600 border-emerald-500 text-white' 
+              : 'bg-rose-600 border-rose-500 text-white'
+          }`}>
+            {toast.type === 'success' ? <CheckCircle size={20} /> : <X size={20} />}
+            <p className="text-sm font-bold tracking-tight">{toast.message}</p>
+            <button onClick={() => setToast(null)} className="ml-2 p-1 hover:bg-white/20 rounded-lg transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {currentView === AppView.DASHBOARD && <Dashboard stats={stats} tickets={tickets} onViewTicket={handleViewTicket} onSeeAll={() => setCurrentView(AppView.TICKETS)} />}
+      {currentView === AppView.TICKETS && (
+        <TicketList 
+          tickets={tickets} 
+          onDelete={deleteTicket} 
+          onUpdate={updateTicketFromList} 
+          onEdit={handleEditTicket} 
+          onView={handleViewTicket}
+          onAdd={() => handleSetView(AppView.NEW_TICKET)}
+        />
+      )}
+      {currentView === AppView.NEW_TICKET && (
+        <TicketForm 
+          onSave={handleSaveTicket} 
+          customers={customers} 
+          suppliers={suppliers} 
+          editTicket={editingTicket || undefined} 
+          sessionUser={sessionUser} 
+          onAddCustomer={addCustomer}
+          onAddSupplier={addSupplier}
+        />
+      )}
+      {currentView === AppView.VIEW_TICKET && viewingTicket && (
+        <BookingDetails ticket={viewingTicket} onBack={() => setCurrentView(AppView.TICKETS)} onEdit={handleEditTicket} />
+      )}
+      {currentView === AppView.CUSTOMERS && <Management type="Customer" items={customers} onAdd={addCustomer} onUpdate={updateCustomer} onDelete={deleteCustomer} />}
+      {currentView === AppView.SUPPLIERS && <Management type="Supplier" items={suppliers} onAdd={addSupplier} onUpdate={updateSupplier} onDelete={deleteSupplier} />}
     </Layout>
   );
 };

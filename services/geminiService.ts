@@ -1,15 +1,8 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Standardize the API key retrieval from the environment
-const getApiKey = () => {
-  const key = process.env.API_KEY;
-  if (!key) {
-    console.warn("Gemini API Key is missing. AI extraction features will be disabled.");
-  }
-  return key || "";
-};
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+// Always use process.env.API_KEY directly as a named parameter
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const ticketSchema = {
   type: Type.OBJECT,
@@ -21,15 +14,11 @@ const ticketSchema = {
         properties: {
           name: { type: Type.STRING, description: "Full name of the passenger." },
           eTicketNo: { type: Type.STRING, description: "Specific electronic ticket number for this passenger." },
-          type: { 
-            type: Type.STRING, 
-            enum: ["Adult", "Child", "Infant"],
-            description: "The type of passenger. Look for indicators like CHD (Child) or INF (Infant) near names." 
-          }
+          type: { type: Type.STRING, enum: ["ADT", "CHD", "INF"], description: "Type of traveler: ADT for Adult, CHD for Child, INF for Infant." }
         },
         required: ["name"]
       },
-      description: "List of passengers and their specific e-ticket numbers found on the ticket."
+      description: "List of passengers, their specific e-ticket numbers, and traveler type (ADT, CHD, or INF) found on the ticket."
     },
     segments: {
       type: Type.ARRAY,
@@ -65,17 +54,13 @@ const ticketSchema = {
 };
 
 export const extractTicketDetails = async (base64Data: string, mimeType: string) => {
-  if (!process.env.API_KEY) {
-    throw new Error("AI extraction is unavailable because the API key is not configured.");
-  }
-
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: {
         parts: [
           { inlineData: { data: base64Data, mimeType } },
-          { text: "Extract flight ticket information. Extract ALL flight segments found. Crucially, identify if a passenger is a Child (CHD) or Infant (INF) and mark their type as 'Child' or 'Infant'. Default is 'Adult'. Provide details in JSON format." }
+          { text: "Extract flight ticket information. Identify if a passenger is an Adult (ADT), Child (CHD), or Infant (INF) based on keywords like (CHD), (INF), or age indicators. Extract ALL flight segments. Provide details in JSON format." }
         ]
       },
       config: {
